@@ -10,19 +10,32 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { authRoutes } from './modules/auth/auth.routes'
-import { prisma } from './utils/prisma' // ✅ Adicionar
+import { dashboardRoutes } from './modules/dashboard/dashboard.routes' 
+import { prisma } from './utils/prisma'
+import { appointmentsRoutes } from './modules/appointments/appointments.routes' 
 
+// ✅ Validação de variáveis obrigatórias
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET não está definido no arquivo .env')
 }
 
-const app = fastify().withTypeProvider<ZodTypeProvider>()
+// ✅ Configurações do ambiente
+const PORT = Number(process.env.PORT) || 3333
+const HOST = process.env.HOST || '0.0.0.0'
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
+const NODE_ENV = process.env.NODE_ENV || 'development'
+
+const app = fastify({
+  logger: NODE_ENV === 'development', 
+}).withTypeProvider<ZodTypeProvider>()
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
 app.register(fastifyCors, {
-  origin: true,
+  origin: NODE_ENV === 'development' 
+    ? true 
+    : FRONTEND_URL, 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   credentials: true,
 })
@@ -31,7 +44,6 @@ app.register(fastifyJwt, {
   secret: process.env.JWT_SECRET,
 })
 
-// ✅ Adicionar Prisma ao Fastify
 app.decorate('prisma', prisma)
 
 app.register(fastifySwagger, {
@@ -58,13 +70,24 @@ app.register(ScalarApiReference, {
   routePrefix: '/docs',
 })
 
+// Rotas
 app.register(authRoutes, { prefix: '/api/auth' })
+app.register(dashboardRoutes, { prefix: '/api/dashboard' })
+app.register(appointmentsRoutes, { prefix: '/api/appointments' })
 
+// Health check
 app.get('/health', async () => {
-  return { status: 'ok', timestamp: new Date().toISOString() }
+  return { 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: NODE_ENV,
+  }
 })
 
-app.listen({ port: 3333, host: '0.0.0.0' }).then(() => {
-  console.log('HTTP Server Running on http://localhost:3333')
-  console.log('Docs available at http://localhost:3333/docs')
+// ✅ Inicializar servidor
+app.listen({ port: PORT, host: HOST }).then(() => {
+  console.log(`🚀 HTTP Server Running on http://${HOST}:${PORT}`)
+  console.log(`📚 Docs available at http://${HOST}:${PORT}/docs`)
+  console.log(`🌍 Environment: ${NODE_ENV}`)
+  console.log(`🔗 Frontend URL: ${FRONTEND_URL}`)
 })

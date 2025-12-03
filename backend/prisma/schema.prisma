@@ -14,12 +14,12 @@ enum UserRole {
 }
 
 enum AppointmentStatus {
-  SCHEDULED
-  CONFIRMED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  NO_SHOW
+  SCHEDULED     // Agendado
+  CONFIRMED     // Confirmado
+  IN_PROGRESS   // Em andamento
+  COMPLETED     // Concluído
+  CANCELLED     // Cancelado
+  NO_SHOW       // Faltou
 }
 
 model User {
@@ -42,9 +42,17 @@ model Client {
   id      String  @id @default(uuid()) @db.Uuid
   phone   String?
   company String?
+  
+ 
+  cpf         String?   @unique
+  birthDate   DateTime?
+  tags        String[]  
+  notes       String?   @db.Text
+  preferences Json?    
 
-  userId String @unique @db.Uuid
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String  @unique @db.Uuid
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address Address?
 
   appointments Appointment[]
 
@@ -54,17 +62,43 @@ model Client {
   @@map("clients")
 }
 
+
+model Address {
+  id           String @id @default(uuid()) @db.Uuid
+  zipCode      String
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+
+  clientId String @unique @db.Uuid
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("addresses")
+}
+
 model Professional {
-  id           String  @id @default(uuid()) @db.Uuid
+  id           String   @id @default(uuid()) @db.Uuid
   specialty    String?
-  availability Json?
+  availability Json?    
+  
+  specialties  String[] 
+  workSchedule Json?    
+  commission   Decimal? @db.Decimal(5, 2) 
+  phone        String?
+  bio          String?  @db.Text
 
   userId String @unique @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  appointments Appointment[]
-
-  services Service[]
+  appointments Appointment[] 
+  services     Service[]
+  vacations    Vacation[]    
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -72,15 +106,31 @@ model Professional {
   @@map("professionals")
 }
 
-model Service {
-  id          String  @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  duration    Int
-  price       Float?
+
+model Vacation {
+  id        String   @id @default(uuid()) @db.Uuid
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
 
   professionalId String       @db.Uuid
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vacations")
+}
+
+model Service {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  description String? @db.Text
+  duration    Int    
+  price       Decimal @default(0) @db.Decimal(10, 2) 
+
+  professionalId String?      @db.Uuid 
+  professional   Professional? @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   appointments Appointment[]
 
@@ -92,15 +142,22 @@ model Service {
 
 model Appointment {
   id       String            @id @default(uuid()) @db.Uuid
-  title    String
+  title    String?           
   dateTime DateTime
-  duration Int
+  duration Int               
   status   AppointmentStatus @default(SCHEDULED)
-  notes    String?
+  notes    String?           @db.Text
+  
+  
+  startTime String            
+  endTime   String            
+  price     Decimal?          @db.Decimal(10, 2) 
 
-  clientId      String         @db.Uuid
-  client        Client         @relation(fields: [clientId], references: [id])
-  professionals Professional[]
+  clientId String @db.Uuid
+  client   Client @relation(fields: [clientId], references: [id])
+
+  professionalId String       @db.Uuid 
+  professional   Professional @relation(fields: [professionalId], references: [id])
 
   serviceId String?  @db.Uuid
   service   Service? @relation(fields: [serviceId], references: [id])
@@ -108,5 +165,8 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([dateTime])
+  @@index([professionalId, dateTime]) 
+  @@index([clientId])
   @@map("appointments")
 }

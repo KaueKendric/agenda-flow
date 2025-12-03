@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
+import { env } from '@/config/env';
 interface User {
   id: string;
   email: string;
@@ -24,7 +24,7 @@ const Debug = () => {
     const testProtectedRoute = async () => {
     const storedToken = localStorage.getItem("token");
     try {
-        const response = await fetch("http://localhost:3333/api/auth/me", {
+        const response = await fetch(`${env.apiUrl}/auth/me`, {
         headers: {
             Authorization: `Bearer ${storedToken}`,
         },

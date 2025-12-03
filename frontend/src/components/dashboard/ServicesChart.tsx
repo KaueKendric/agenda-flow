@@ -1,55 +1,79 @@
-import { motion } from 'framer-motion';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card } from '@/components/ui/card';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-const data = [
-  { name: 'Corte', value: 35, color: 'hsl(263, 70%, 68%)' },
-  { name: 'Barba', value: 25, color: 'hsl(174, 100%, 41%)' },
-  { name: 'Corte + Barba', value: 20, color: 'hsl(263, 70%, 58%)' },
-  { name: 'Sobrancelha', value: 12, color: 'hsl(174, 100%, 31%)' },
-  { name: 'Outros', value: 8, color: 'hsl(var(--muted))' },
+// ✅ Cores sólidas em vez de variáveis CSS
+const COLORS = [
+  '#7A5FFF', // Roxo (primary)
+  '#00D1B2', // Teal
+  '#FF6B9D', // Rosa
+  '#FFB84D', // Laranja
+  '#4ECDC4', // Ciano
 ];
 
-export function ServicesChart() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-    >
-      <Card className="backdrop-blur-glass bg-card/40 border-border/50 shadow-glass rounded-2xl p-6">
-        <h3 className="text-lg font-semibold mb-4">Serviços mais agendados</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={80}
-                paddingAngle={4}
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                }}
-              />
-              <Legend 
-                formatter={(value) => <span className="text-sm text-foreground">{value}</span>}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+interface ServicesChartProps {
+  data: Array<{
+    name: string;
+    count: number;
+    percentage: number;
+  }>;
+}
+
+export function ServicesChart({ data }: ServicesChartProps) {
+  if (data.length === 0) {
+    return (
+      <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50">
+        <h3 className="text-lg font-semibold mb-4">Serviços Mais Agendados</h3>
+        <div className="flex items-center justify-center h-[300px]">
+          <p className="text-muted-foreground">Nenhum serviço agendado ainda</p>
         </div>
       </Card>
-    </motion.div>
+    );
+  }
+
+  return (
+    <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50">
+      <h3 className="text-lg font-semibold mb-4">Serviços Mais Agendados</h3>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={(props) => {
+              const item = data[props.index];
+              return `${item.percentage}%`;
+            }}
+            outerRadius={90}
+            fill="#8884d8"
+            dataKey="count"
+          >
+            {data.map((_, index) => (
+              <Cell 
+                key={`cell-${index}`} 
+                fill={COLORS[index % COLORS.length]} 
+              />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '8px',
+              color: 'hsl(var(--foreground))',
+            }}
+            formatter={(value: number, name: string) => [
+              `${value} agendamentos`,
+              name,
+            ]}
+          />
+          <Legend 
+            wrapperStyle={{
+              paddingTop: '20px',
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </Card>
   );
 }

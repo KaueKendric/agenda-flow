@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Sparkles, Mail, Lock, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { env } from '@/config/env';
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -19,7 +20,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3333/api/auth/login", {
+      const response = await fetch(`${env.apiUrl}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
