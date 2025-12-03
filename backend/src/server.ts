@@ -10,6 +10,7 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { authRoutes } from './modules/auth/auth.routes'
+import { prisma } from './utils/prisma' // ✅ Adicionar
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET não está definido no arquivo .env')
@@ -29,6 +30,9 @@ app.register(fastifyCors, {
 app.register(fastifyJwt, {
   secret: process.env.JWT_SECRET,
 })
+
+// ✅ Adicionar Prisma ao Fastify
+app.decorate('prisma', prisma)
 
 app.register(fastifySwagger, {
   openapi: {

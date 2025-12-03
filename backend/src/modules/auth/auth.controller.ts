@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { loginSchema, registerSchema } from './auth.schemas'
 import { AuthService } from './auth.service'
 
+
 const authService = new AuthService()
 
 export class AuthController {

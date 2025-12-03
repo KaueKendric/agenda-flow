@@ -28,7 +28,7 @@ export const registerSchema = z.object({
     .min(6, 'Senha deve ter no mínimo 6 caracteres')
     .max(100, 'Senha muito longa'),
   role: z.enum(['CLIENT', 'PROFESSIONAL', 'ADMIN'], {
-    required_error: 'Selecione um tipo de conta',
+    message: 'Selecione um tipo de conta',   
   }),
 });
 

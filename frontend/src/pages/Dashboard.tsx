@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogOut, User, Calendar, Settings } from 'lucide-react';
@@ -6,18 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { authService } from '@/lib/api';
 
+interface UserData {
+  id: string;
+  email: string;
+  name?: string;
+  role: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  
+  const user: UserData | null = authService.getStoredUser();
 
   useEffect(() => {
-    const storedUser = authService.getStoredUser();
-    if (!storedUser) {
+    if (!user) {
       navigate('/auth');
-      return;
     }
-    setUser(storedUser);
-  }, [navigate]);
+  }, [user, navigate]);
 
   const handleLogout = () => {
     authService.logout();
