@@ -102,3 +102,19 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
 }
+
+/* Fix para Popover dentro de Dialog */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+/* Fix para Calendar dentro de Dialog */
+.rdp {
+  --rdp-cell-size: 40px;
+  margin: 0;
+}
+
+/* Garantir que o Popover sempre fique por cima */
+[role="dialog"] + [data-radix-portal] {
+  z-index: 9999 !important;
+}

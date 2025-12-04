@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3333';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -42,13 +42,13 @@ export interface AuthResponse {
 
 export const authService = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/auth/login', data);
+    const response = await api.post<AuthResponse>('/auth/login', data);
     return response.data;
   },
 
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/api/auth/register', data);
-    return response.data;
+    const response = await api.post<AuthResponse>('/auth/register', data);
+    return response.data; // ✅ ADICIONADO
   },
 
   logout: () => {

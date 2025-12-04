@@ -13,6 +13,7 @@ import { authRoutes } from './modules/auth/auth.routes'
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes' 
 import { prisma } from './utils/prisma'
 import { appointmentsRoutes } from './modules/appointments/appointments.routes' 
+import { testRoutes } from './test-routes'
 
 // ✅ Validação de variáveis obrigatórias
 if (!process.env.JWT_SECRET) {
@@ -74,6 +75,7 @@ app.register(ScalarApiReference, {
 app.register(authRoutes, { prefix: '/api/auth' })
 app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(appointmentsRoutes, { prefix: '/api/appointments' })
+app.register(testRoutes, { prefix: '/api' })
 
 // Health check
 app.get('/health', async () => {
