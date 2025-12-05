@@ -54,14 +54,12 @@ export class AppointmentsService {
       }
     }
 
-    // Busca por nome do cliente (através de user.name)
+    // Busca por nome do cliente (agora em Client.name)
     if (search) {
       where.client = {
-        user: {
-          name: {
-            contains: search,
-            mode: 'insensitive',
-          },
+        name: {
+          contains: search,
+          mode: 'insensitive',
         },
       }
     }
@@ -72,18 +70,7 @@ export class AppointmentsService {
         skip,
         take: limit,
         include: {
-          client: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  image: true,
-                },
-              },
-            },
-          },
+          client: true,
           professional: {
             include: {
               user: {
@@ -121,11 +108,7 @@ export class AppointmentsService {
     const appointment = await prisma.appointment.findUnique({
       where: { id },
       include: {
-        client: {
-          include: {
-            user: true,
-          },
-        },
+        client: true,
         professional: {
           include: {
             user: true,
@@ -196,11 +179,7 @@ export class AppointmentsService {
         price: service.price,
       },
       include: {
-        client: {
-          include: {
-            user: true,
-          },
-        },
+        client: true,
         professional: {
           include: {
             user: true,
@@ -270,11 +249,7 @@ export class AppointmentsService {
       where: { id },
       data: updateData,
       include: {
-        client: {
-          include: {
-            user: true,
-          },
-        },
+        client: true,
         professional: {
           include: {
             user: true,
@@ -301,11 +276,7 @@ export class AppointmentsService {
       where: { id },
       data: { status: status as any },
       include: {
-        client: {
-          include: {
-            user: true,
-          },
-        },
+        client: true,
         professional: {
           include: {
             user: true,
@@ -338,10 +309,11 @@ export class AppointmentsService {
   // ==================== HORÁRIOS DISPONÍVEIS ====================
   async getAvailableSlots(query: AvailableSlotsQuery) {
     console.log('📥 Query recebida:', query)
-  console.log('📥 Tipo da query:', typeof query)
-  console.log('📥 professionalId:', query.professionalId, typeof query.professionalId)
-  console.log('📥 serviceId:', query.serviceId, typeof query.serviceId)
-  console.log('📥 date:', query.date, typeof query.date)
+    console.log('📥 Tipo da query:', typeof query)
+    console.log('📥 professionalId:', query.professionalId, typeof query.professionalId)
+    console.log('📥 serviceId:', query.serviceId, typeof query.serviceId)
+    console.log('📥 date:', query.date, typeof query.date)
+
     const { professionalId, serviceId, date } = query
 
     // 1. Buscar o serviço para saber a duração
@@ -410,11 +382,7 @@ export class AppointmentsService {
     const appointments = await prisma.appointment.findMany({
       where,
       include: {
-        client: {
-          include: {
-            user: true,
-          },
-        },
+        client: true,
         professional: {
           include: {
             user: true,

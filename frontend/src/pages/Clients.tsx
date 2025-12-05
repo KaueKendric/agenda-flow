@@ -87,8 +87,8 @@ export default function Clients() {
       const searchLower = search.toLowerCase()
       result = result.filter(
         (client) =>
-          client.user.name?.toLowerCase().includes(searchLower) ||
-          client.user.email.toLowerCase().includes(searchLower)
+          client.name?.toLowerCase().includes(searchLower) ||
+          client.email.toLowerCase().includes(searchLower)
       )
     }
 
@@ -100,12 +100,12 @@ export default function Clients() {
 
         switch (filters.sortBy) {
           case 'name':
-            aVal = a.user.name || ''
-            bVal = b.user.name || ''
+            aVal = a.name || ''
+            bVal = b.name || ''
             break
           case 'email':
-            aVal = a.user.email
-            bVal = b.user.email
+            aVal = a.email
+            bVal = b.email
             break
           case 'city':
             aVal = a.city || ''
@@ -147,6 +147,8 @@ export default function Clients() {
   }
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) return
+
     setDeletingId(id)
     try {
       await clientsApi.delete(id)
@@ -182,7 +184,7 @@ export default function Clients() {
         })
       } else {
         const created = await clientsApi.create(data as CreateClientInput)
-        setClients((prev) => [...prev, created])
+        setClients((prev) => [created, ...prev])
         toast({
           title: 'Cliente criado',
           description: 'O novo cliente foi adicionado com sucesso.',
@@ -304,7 +306,6 @@ export default function Clients() {
         onOpenChange={setModalOpen}
         client={editingClient}
         onSave={handleSave}
-        userId={user?.id || ''}
       />
     </SidebarProvider>
   )

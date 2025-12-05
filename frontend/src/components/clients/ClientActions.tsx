@@ -20,14 +20,19 @@ interface ClientActionsProps {
   isDeleting?: boolean
 }
 
-export function ClientActions({ client, onEdit, onDelete, isDeleting }: ClientActionsProps) {
+export function ClientActions({
+  client,
+  onEdit,
+  onDelete,
+  isDeleting,
+}: ClientActionsProps) {
   return (
     <div className="flex items-center gap-2">
       <Button
         variant="ghost"
         size="icon"
         onClick={() => onEdit(client)}
-        aria-label={`Editar ${client.user.name}`}
+        aria-label={`Editar ${client.name}`}
       >
         <Pencil className="h-4 w-4" />
       </Button>
@@ -38,7 +43,7 @@ export function ClientActions({ client, onEdit, onDelete, isDeleting }: ClientAc
             variant="ghost"
             size="icon"
             className="text-destructive hover:text-destructive"
-            aria-label={`Deletar ${client.user.name}`}
+            aria-label={`Deletar ${client.name}`}
             disabled={isDeleting}
           >
             {isDeleting ? (
@@ -53,8 +58,7 @@ export function ClientActions({ client, onEdit, onDelete, isDeleting }: ClientAc
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir o cliente{' '}
-              <strong>{client.user.name}</strong>? Esta ação não pode ser
-              desfeita.
+              <strong>{client.name}</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

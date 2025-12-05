@@ -2,21 +2,30 @@ import { api } from './api'
 import type { Client } from '@/types/clients'
 
 export interface CreateClientInput {
-  userId: string
+  name: string
+  email: string
   phone?: string
   address?: string
   city?: string
   state?: string
   zipCode?: string
+  company?: string
+  cpf?: string
+  birthDate?: string
   notes?: string
 }
 
 export interface UpdateClientInput {
+  name?: string
+  email?: string
   phone?: string
   address?: string
   city?: string
   state?: string
   zipCode?: string
+  company?: string
+  cpf?: string
+  birthDate?: string
   notes?: string
 }
 

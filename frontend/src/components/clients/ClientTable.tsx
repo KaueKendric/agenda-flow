@@ -23,7 +23,6 @@ interface ClientTableProps {
   deletingId?: string
 }
 
-// ✅ SortButton FORA do componente
 interface SortButtonProps {
   column: 'name' | 'email' | 'city' | 'createdAt'
   children: React.ReactNode
@@ -142,9 +141,9 @@ export function ClientTable({
           {clients.map((client) => (
             <TableRow key={client.id}>
               <TableCell className="font-medium">
-                {client.user.name || '-'}
+                {client.name || '-'}
               </TableCell>
-              <TableCell>{client.user.email}</TableCell>
+              <TableCell>{client.email}</TableCell>
               <TableCell>{client.phone || '-'}</TableCell>
               <TableCell>
                 {client.city

@@ -5,16 +5,6 @@ export class ClientsService {
   async list() {
     const clients = await prisma.client.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
     })
 
     return clients
@@ -23,9 +13,6 @@ export class ClientsService {
   async getById(id: string) {
     const client = await prisma.client.findUnique({
       where: { id },
-      include: {
-        user: true,
-      },
     })
 
     if (!client) {
@@ -35,16 +22,13 @@ export class ClientsService {
     return client
   }
 
-  async create(data: Prisma.ClientUncheckedCreateInput) {
+  async create(data: Prisma.ClientCreateInput) {
     return prisma.client.create({
       data,
-      include: {
-        user: true,
-      },
     })
   }
 
-  async update(id: string, data: Prisma.ClientUncheckedUpdateInput) {
+  async update(id: string, data: Prisma.ClientUpdateInput) {
     const client = await prisma.client.findUnique({
       where: { id },
     })
@@ -56,9 +40,6 @@ export class ClientsService {
     return prisma.client.update({
       where: { id },
       data,
-      include: {
-        user: true,
-      },
     })
   }
 

@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { appointmentsApi } from '@/lib/appointments-api';
 import type { Appointment, AppointmentStatus } from '@/types/appointment';
-import { STATUS_LABELS, STATUS_COLORS } from '@/types/appointment'
+import { STATUS_LABELS, STATUS_COLORS } from '@/types/appointment';
 
 interface AppointmentDetailsModalProps {
   open: boolean;
@@ -86,7 +86,9 @@ export function AppointmentDetailsModal({
   const canConfirm = appointment.status === 'SCHEDULED';
   const canStart = appointment.status === 'CONFIRMED';
   const canComplete = appointment.status === 'IN_PROGRESS';
-  const canCancel = !['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(appointment.status);
+  const canCancel = !['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(
+    appointment.status
+  );
 
   return (
     <>
@@ -109,13 +111,18 @@ export function AppointmentDetailsModal({
               </div>
               <div>
                 <p className="font-medium">
-                  {format(new Date(appointment.dateTime), "EEEE, dd 'de' MMMM 'de' yyyy", {
-                    locale: ptBR,
-                  })}
+                  {format(
+                    new Date(appointment.dateTime),
+                    "EEEE, dd 'de' MMMM 'de' yyyy",
+                    {
+                      locale: ptBR,
+                    }
+                  )}
                 </p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  {appointment.startTime} - {appointment.endTime} ({appointment.duration} min)
+                  {appointment.startTime} - {appointment.endTime} (
+                  {appointment.duration} min)
                 </div>
               </div>
             </div>
@@ -127,10 +134,10 @@ export function AppointmentDetailsModal({
                 Cliente
               </h4>
               <div className="pl-6 space-y-1 text-sm">
-                <p>{appointment.client.user.name || 'Sem nome'}</p>
+                <p>{appointment.client.name || 'Sem nome'}</p>
                 <p className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-3 w-3" />
-                  {appointment.client.user.email}
+                  {appointment.client.email}
                 </p>
                 {appointment.client.phone && (
                   <p className="flex items-center gap-2 text-muted-foreground">
@@ -162,12 +169,16 @@ export function AppointmentDetailsModal({
               <div className="pl-0 p-3 rounded-lg bg-muted/50 space-y-1">
                 <p className="font-medium">{appointment.service.name}</p>
                 {appointment.service.description && (
-                  <p className="text-sm text-muted-foreground">{appointment.service.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {appointment.service.description}
+                  </p>
                 )}
                 <div className="flex gap-4 text-sm">
                   <span>Duração: {appointment.service.duration} min</span>
                   <span className="font-medium">
-                    {appointment.price ? formatPrice(appointment.price) : formatPrice(appointment.service.price)}
+                    {appointment.price
+                      ? formatPrice(appointment.price)
+                      : formatPrice(appointment.service.price)}
                   </span>
                 </div>
               </div>
@@ -180,7 +191,9 @@ export function AppointmentDetailsModal({
                   <FileText className="h-4 w-4" />
                   Observações
                 </h4>
-                <p className="pl-6 text-sm text-muted-foreground">{appointment.notes}</p>
+                <p className="pl-6 text-sm text-muted-foreground">
+                  {appointment.notes}
+                </p>
               </div>
             )}
           </div>
@@ -272,12 +285,16 @@ export function AppointmentDetailsModal({
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar agendamento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O agendamento será marcado como cancelado.
+              Esta ação não pode ser desfeita. O agendamento será marcado como
+              cancelado.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancel} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleCancel}
+              className="bg-destructive text-destructive-foreground"
+            >
               Confirmar Cancelamento
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -20,10 +20,11 @@ interface ClientModalProps {
   onOpenChange: (open: boolean) => void
   client?: Client | null
   onSave: (data: CreateClientInput | UpdateClientInput) => Promise<void>
-  userId: string
 }
 
 interface FormData {
+  name: string
+  email: string
   phone: string
   address: string
   city: string
@@ -33,11 +34,15 @@ interface FormData {
 }
 
 interface FormErrors {
+  name?: string
+  email?: string
   state?: string
   zipCode?: string
 }
 
 const initialFormData: FormData = {
+  name: '',
+  email: '',
   phone: '',
   address: '',
   city: '',
@@ -51,7 +56,6 @@ export function ClientModal({
   onOpenChange,
   client,
   onSave,
-  userId,
 }: ClientModalProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -62,6 +66,8 @@ export function ClientModal({
   useEffect(() => {
     if (client) {
       setFormData({
+        name: client.name || '',
+        email: client.email || '',
         phone: client.phone || '',
         address: client.address || '',
         city: client.city || '',
@@ -77,6 +83,16 @@ export function ClientModal({
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nome é obrigatório'
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Email inválido'
+    }
 
     if (formData.state && formData.state.length > 2) {
       newErrors.state = 'Estado deve ter no máximo 2 caracteres'
@@ -98,6 +114,8 @@ export function ClientModal({
     setIsSubmitting(true)
     try {
       const data = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
         phone: formData.phone || undefined,
         address: formData.address || undefined,
         city: formData.city || undefined,
@@ -106,12 +124,7 @@ export function ClientModal({
         notes: formData.notes || undefined,
       }
 
-      if (isEditing) {
-        await onSave(data as UpdateClientInput)
-      } else {
-        await onSave({ ...data, userId } as CreateClientInput)
-      }
-
+      await onSave(data)
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
@@ -143,6 +156,45 @@ export function ClientModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nome e Email */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Nome <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="João Silva"
+                className={errors.name ? 'border-destructive' : ''}
+              />
+              {errors.name && (
+                <p className="text-xs text-destructive">{errors.name}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">
+                Email <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="joao@email.com"
+                className={errors.email ? 'border-destructive' : ''}
+              />
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Telefone e CEP */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
@@ -171,6 +223,7 @@ export function ClientModal({
             </div>
           </div>
 
+          {/* Endereço */}
           <div className="space-y-2">
             <Label htmlFor="address">Endereço</Label>
             <Input
@@ -182,6 +235,7 @@ export function ClientModal({
             />
           </div>
 
+          {/* Cidade e Estado */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="city">Cidade</Label>
@@ -211,6 +265,7 @@ export function ClientModal({
             </div>
           </div>
 
+          {/* Observações */}
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea

@@ -1,5 +1,3 @@
-// src/types/appointment.ts
-
 export type AppointmentStatus = 
   | 'SCHEDULED' 
   | 'CONFIRMED' 
@@ -15,12 +13,6 @@ export interface User {
   image?: string | null
 }
 
-export interface Client {
-  id: string
-  phone: string | null
-  user: User
-}
-
 export interface Professional {
   id: string
   specialties: string[]
@@ -33,6 +25,26 @@ export interface Service {
   description?: string | null
   duration: number
   price: string
+}
+
+
+export interface Client {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  address?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  company?: string
+  cpf?: string
+  birthDate?: string
+  tags?: string[]
+  notes?: string
+  preferences?: Record<string, unknown>
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Appointment {

@@ -1,18 +1,35 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { appointmentsApi } from '@/lib/appointments-api';
-import type { CalendarAppointment, AppointmentStatus } from '@/types/appointment';
+import type {
+  CalendarAppointment,
+  AppointmentStatus,
+} from '@/types/appointment';
 
 interface AppointmentCalendarProps {
   onAppointmentClick: (appointmentId: string) => void;
   onDayClick: (date: Date) => void;
 }
 
-export function AppointmentCalendar({ onAppointmentClick, onDayClick }: AppointmentCalendarProps) {
+export function AppointmentCalendar({
+  onAppointmentClick,
+  onDayClick,
+}: AppointmentCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointments, setAppointments] = useState<CalendarAppointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +56,10 @@ export function AppointmentCalendar({ onAppointmentClick, onDayClick }: Appointm
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const calendarDays = eachDayOfInterval({
+    start: calendarStart,
+    end: calendarEnd,
+  });
 
   const getAppointmentsForDay = (day: Date) => {
     return appointments.filter((apt) => isSameDay(new Date(apt.dateTime), day));
@@ -63,13 +83,21 @@ export function AppointmentCalendar({ onAppointmentClick, onDayClick }: Appointm
     <div className="bg-card rounded-lg border p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+        >
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <h3 className="font-semibold text-lg capitalize">
           {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
         </h3>
-        <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+        >
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
@@ -130,9 +158,12 @@ export function AppointmentCalendar({ onAppointmentClick, onDayClick }: Appointm
                           e.stopPropagation();
                           onAppointmentClick(apt.id);
                         }}
-                        title={`${apt.startTime} - ${apt.client.user.name || 'Cliente'} - ${apt.service.name}`}
+                        title={`${apt.startTime} - ${
+                          apt.client.name || 'Cliente'
+                        } - ${apt.service.name}`}
                       >
-                        {apt.startTime} {apt.client.user.name?.split(' ')[0] || 'Cliente'}
+                        {apt.startTime}{' '}
+                        {apt.client.name?.split(' ')[0] || 'Cliente'}
                       </div>
                     ))}
                     {dayAppointments.length > 3 && (

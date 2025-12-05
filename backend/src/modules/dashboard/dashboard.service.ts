@@ -67,13 +67,23 @@ export class DashboardService {
     const occupancyRate = Math.round((occupiedSlots / totalSlots) * 100)
 
     // Calcular variações
-    const todayVariation = appointmentsYesterday > 0
-      ? Math.round(((appointmentsToday - appointmentsYesterday) / appointmentsYesterday) * 100)
-      : 0
+    const todayVariation =
+      appointmentsYesterday > 0
+        ? Math.round(
+            ((appointmentsToday - appointmentsYesterday) /
+              appointmentsYesterday) *
+              100,
+          )
+        : 0
 
-    const weekVariation = appointmentsLastWeek > 0
-      ? Math.round(((appointmentsWeek - appointmentsLastWeek) / appointmentsLastWeek) * 100)
-      : 0
+    const weekVariation =
+      appointmentsLastWeek > 0
+        ? Math.round(
+            ((appointmentsWeek - appointmentsLastWeek) /
+              appointmentsLastWeek) *
+              100,
+          )
+        : 0
 
     return {
       appointmentsToday: {
@@ -93,7 +103,11 @@ export class DashboardService {
 
   // Gráfico últimos 7 dias
   async getAppointmentsChart() {
-    const days = []
+    const days: {
+      date: string
+      day: string
+      count: number
+    }[] = []
     const today = new Date()
 
     for (let i = 6; i >= 0; i--) {
@@ -139,12 +153,20 @@ export class DashboardService {
       take: 5,
     })
 
-    const total = services.reduce((sum, s) => sum + s._count.appointments, 0)
+    const total = services.reduce(
+      (sum, s) => sum + s._count.appointments,
+      0,
+    )
 
-    return services.map(service => ({
+    return services.map((service) => ({
       name: service.name,
       count: service._count.appointments,
-      percentage: total > 0 ? Math.round((service._count.appointments / total) * 100) : 0,
+      percentage:
+        total > 0
+          ? Math.round(
+              (service._count.appointments / total) * 100,
+            )
+          : 0,
     }))
   }
 
@@ -162,11 +184,7 @@ export class DashboardService {
         },
       },
       include: {
-        client: {
-          include: {
-            user: true,
-          },
-        },
+        client: true, // Client agora não tem relação com User
         professional: {
           include: {
             user: true,
@@ -180,13 +198,13 @@ export class DashboardService {
       take: 5,
     })
 
-    return appointments.map(apt => ({
+    return appointments.map((apt) => ({
       id: apt.id,
       time: apt.startTime,
       date: apt.dateTime,
-      client: apt.client.user.name || apt.client.user.email,
+      client: apt.client?.name || apt.client?.email || 'Cliente',
       service: apt.service?.name || 'Serviço',
-      professional: apt.professional.user.name || 'Profissional',
+      professional: apt.professional.user?.name || 'Profissional',
       status: apt.status,
     }))
   }
@@ -207,7 +225,7 @@ export class DashboardService {
       _count: true,
     })
 
-    return appointments.map(apt => ({
+    return appointments.map((apt) => ({
       date: apt.dateTime.toISOString().split('T')[0],
       count: apt._count,
     }))

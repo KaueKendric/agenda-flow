@@ -98,8 +98,12 @@ export function AppointmentsList({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="font-medium">{appointment.client.user.name || 'Sem nome'}</div>
-                  <div className="text-sm text-muted-foreground">{appointment.client.phone}</div>
+                  <div className="font-medium">
+                    {appointment.client?.name || 'Sem nome'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {appointment.client?.phone || appointment.client?.email || ''}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div>{appointment.service.name}</div>
@@ -107,7 +111,9 @@ export function AppointmentsList({
                     {formatPrice(appointment.service.price)}
                   </div>
                 </TableCell>
-                <TableCell>{appointment.professional.user.name || 'Sem nome'}</TableCell>
+                <TableCell>
+                  {appointment.professional.user?.name || 'Sem nome'}
+                </TableCell>
                 <TableCell>
                   <Badge className={STATUS_COLORS[appointment.status]}>
                     {STATUS_LABELS[appointment.status]}
@@ -161,13 +167,17 @@ export function AppointmentsList({
               </Badge>
             </div>
             <div>
-              <div className="font-medium">{appointment.client.user.name || 'Sem nome'}</div>
-              <div className="text-sm text-muted-foreground">{appointment.client.phone}</div>
+              <div className="font-medium">
+                {appointment.client?.name || 'Sem nome'}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {appointment.client?.phone || appointment.client?.email || ''}
+              </div>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span>{appointment.service.name}</span>
               <span className="text-muted-foreground">
-                {appointment.professional.user.name || 'Sem nome'}
+                {appointment.professional.user?.name || 'Sem nome'}
               </span>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
