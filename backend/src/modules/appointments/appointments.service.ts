@@ -5,6 +5,8 @@ import {
   ListAppointmentsQuery,
   AvailableSlotsQuery 
 } from './appointments.schemas'
+import { whatsappService } from '../../integrations/whatsapp/whatsapp.service'
+import { emailService } from '../../integrations/email/email.service'
 
 export class AppointmentsService {
   // ==================== LISTAR AGENDAMENTOS ====================
@@ -133,7 +135,6 @@ export class AppointmentsService {
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
     })
-
     if (!service) {
       throw new Error('Serviço não encontrado')
     }
@@ -142,7 +143,6 @@ export class AppointmentsService {
     const client = await prisma.client.findUnique({
       where: { id: clientId },
     })
-
     if (!client) {
       throw new Error('Cliente não encontrado')
     }
@@ -150,8 +150,8 @@ export class AppointmentsService {
     // 3. Verificar se o profissional existe
     const professional = await prisma.professional.findUnique({
       where: { id: professionalId },
+      include: { user: true },
     })
-
     if (!professional) {
       throw new Error('Profissional não encontrado')
     }
@@ -188,6 +188,56 @@ export class AppointmentsService {
         service: true,
       },
     })
+
+    // 7. Disparar WhatsApp (se configurado)
+    if (appointment.client.phone) {
+      const dateStr = new Date(appointment.dateTime).toLocaleDateString('pt-BR')
+
+      const waMessage = whatsappService.formatAppointmentConfirmation({
+        clientName: appointment.client.name || 'Cliente',
+        serviceName: appointment.service?.name || 'Serviço',
+        professionalName: appointment.professional.user?.name || 'Profissional',
+        date: dateStr,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+      })
+
+      whatsappService
+        .sendMessage(appointment.client.phone, waMessage)
+        .catch((err) => console.error('WhatsApp send error (create):', err))
+    }
+
+    // 8. Disparar e-mail (Resend)
+    if (appointment.client.email) {
+      const dateStr = new Date(appointment.dateTime).toLocaleDateString('pt-BR')
+
+      const emailText = emailService.formatAppointmentConfirmationText({
+        clientName: appointment.client.name || 'Cliente',
+        serviceName: appointment.service?.name || 'Serviço',
+        professionalName: appointment.professional.user?.name || 'Profissional',
+        date: dateStr,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+      })
+
+      const emailHtml = emailService.formatAppointmentConfirmationHtml({
+        clientName: appointment.client.name || 'Cliente',
+        serviceName: appointment.service?.name || 'Serviço',
+        professionalName: appointment.professional.user?.name || 'Profissional',
+        date: dateStr,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+      })
+
+      emailService
+        .sendEmail({
+          to: appointment.client.email,
+          subject: 'Confirmação de agendamento - AgendaFlow',
+          text: emailText,
+          html: emailHtml,
+        })
+        .catch((err) => console.error('Email send error (create):', err))
+    }
 
     return appointment
   }
@@ -356,8 +406,8 @@ export class AppointmentsService {
     const availableSlots = this.generateAvailableSlots(
       existingAppointments,
       service.duration,
-      '08:00', // Horário de início (pode ser configurável)
-      '18:00', // Horário de fim (pode ser configurável)
+      '08:00',
+      '18:00',
     )
 
     return availableSlots
@@ -400,7 +450,6 @@ export class AppointmentsService {
 
   // ==================== FUNÇÕES AUXILIARES ====================
 
-  // Calcular horário de término
   private calculateEndTime(startTime: string, durationMinutes: number): string {
     const [hours, minutes] = startTime.split(':').map(Number)
     const totalMinutes = hours * 60 + minutes + durationMinutes
@@ -411,7 +460,6 @@ export class AppointmentsService {
     return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
   }
 
-  // Validar conflito de horários (CRÍTICO!)
   private async validateTimeConflict(
     professionalId: string,
     date: Date,
@@ -449,7 +497,6 @@ export class AppointmentsService {
       },
     })
 
-    // Verificar sobreposição de horários
     for (const apt of existingAppointments) {
       const hasConflict = 
         (startTime >= apt.startTime && startTime < apt.endTime) ||
@@ -464,7 +511,6 @@ export class AppointmentsService {
     }
   }
 
-  // Gerar slots disponíveis
   private generateAvailableSlots(
     existingAppointments: { startTime: string; endTime: string }[],
     durationMinutes: number,
@@ -479,7 +525,6 @@ export class AppointmentsService {
     let currentMinutes = startHour * 60 + startMinute
     const endMinutes = endHour * 60 + endMinute
 
-    // Gerar slots de 30 em 30 minutos
     const slotInterval = 30
 
     while (currentMinutes + durationMinutes <= endMinutes) {
@@ -488,7 +533,6 @@ export class AppointmentsService {
       const slotTime = `${String(slotHour).padStart(2, '0')}:${String(slotMinute).padStart(2, '0')}`
       const slotEndTime = this.calculateEndTime(slotTime, durationMinutes)
 
-      // Verificar se não conflita com agendamentos existentes
       const hasConflict = existingAppointments.some(apt => {
         return (
           (slotTime >= apt.startTime && slotTime < apt.endTime) ||

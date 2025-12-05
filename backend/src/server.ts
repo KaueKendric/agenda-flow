@@ -30,7 +30,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
 const app = fastify({
-  logger: NODE_ENV === 'development', 
+  logger: NODE_ENV === 'development' ? false : true, 
 }).withTypeProvider<ZodTypeProvider>()
 
 app.setValidatorCompiler(validatorCompiler)

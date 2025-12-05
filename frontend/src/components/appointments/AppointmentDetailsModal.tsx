@@ -14,6 +14,7 @@ import {
   PlayCircle,
   XCircle,
   Pencil,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +56,7 @@ export function AppointmentDetailsModal({
 }: AppointmentDetailsModalProps) {
   const [loading, setLoading] = useState<AppointmentStatus | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   if (!appointment) return null;
 
@@ -81,6 +83,19 @@ export function AppointmentDetailsModal({
     setConfirmCancel(false);
     await handleStatusChange('CANCELLED');
     onOpenChange(false);
+  };
+
+  const handleSendReminder = async () => {
+    setSendingReminder(true);
+    try {
+      await appointmentsApi.sendReminder(appointment.id);
+      alert('Lembrete enviado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao enviar lembrete:', error);
+      alert('Erro ao enviar lembrete. Verifique se o cliente tem telefone cadastrado.');
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   const canConfirm = appointment.status === 'SCHEDULED';
@@ -200,6 +215,22 @@ export function AppointmentDetailsModal({
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              {/* Botão de lembrete */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSendReminder}
+                disabled={loading !== null || sendingReminder}
+                className="flex-1 sm:flex-none"
+              >
+                {sendingReminder ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                )}
+                Enviar Lembrete
+              </Button>
+
               {canConfirm && (
                 <Button
                   variant="outline"

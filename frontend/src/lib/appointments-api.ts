@@ -81,4 +81,9 @@ export const appointmentsApi = {
     });
     return response.data;
   },
+
+  async sendReminder(id: string): Promise<{ message: string }> {
+    const response = await api.post(`/appointments/${id}/send-reminder`);
+    return response.data;
+  },
 };
