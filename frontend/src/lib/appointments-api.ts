@@ -6,7 +6,7 @@ import type {
   AvailableSlotsResponse 
 } from '@/types/appointment';
 
-export const appointmentsApi = {  // ✅ EXPORTAR
+export const appointmentsApi = {  
   async list(params?: {
     page?: number;
     limit?: number;
