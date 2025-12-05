@@ -72,7 +72,7 @@ export async function update(id: string, data: Partial<Appointment>) {
     });
 }
 
-export async function updateStatus(id: string, /*status: AppointmentStatus*/) {
+export async function updateStatus(id: string, status: any, /*status: AppointmentStatus*/) {
     return prisma.appointment.update({
         where: { id },
         //data: { status }
