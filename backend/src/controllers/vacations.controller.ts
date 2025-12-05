@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import * as vacationService from '../services/vacations.service';
+import { FastifyRequest, FastifyReply } from 'fastify'
+import * as vacationService from '../modules/vacations/vacations.service';
 
 
 export const list = async (req: Request, res: Response) => {

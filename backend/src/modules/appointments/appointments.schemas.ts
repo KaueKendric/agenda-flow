@@ -5,7 +5,7 @@ export const createAppointmentSchema = z.object({
   clientId: z.string().uuid('ID do cliente inválido'),
   professionalId: z.string().uuid('ID do profissional inválido'),
   serviceId: z.string().uuid('ID do serviço inválido'),
-  date: z.string().datetime('Data inválida'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD'),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:MM)'),
   notes: z.string().optional(),
 })
@@ -15,7 +15,7 @@ export const updateAppointmentSchema = z.object({
   clientId: z.string().uuid().optional(),
   professionalId: z.string().uuid().optional(),
   serviceId: z.string().uuid().optional(),
-  date: z.string().datetime().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD').optional(),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
   notes: z.string().optional(),
   status: z.enum(['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),

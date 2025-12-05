@@ -16,7 +16,7 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
 
   // ==================== ROTAS ====================
   
-  // Buscar horários disponíveis (ANTES de /:id para não conflitar)
+  // Buscar horários disponíveis 
   fastify.get('/available-slots', controller.getAvailableSlots.bind(controller))
 
   // Buscar calendário mensal

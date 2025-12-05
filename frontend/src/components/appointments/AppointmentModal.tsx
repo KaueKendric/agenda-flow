@@ -266,7 +266,7 @@ export function AppointmentModal({
             )}
           </div>
 
-          {/* Date */}
+            {/* Date */}
             <div className="grid gap-2">
               <Label>Data *</Label>
               <Popover>
@@ -274,7 +274,7 @@ export function AppointmentModal({
                   <Button
                     variant="outline"
                     className={cn(
-                      'justify-start text-left font-normal',
+                      'w-full justify-start text-left font-normal',
                       !formData.date && 'text-muted-foreground'
                     )}
                   >
@@ -284,29 +284,30 @@ export function AppointmentModal({
                       : 'Selecione a data'}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
-                  className="w-auto p-0 z-[9999]" 
-                  align="start"
-                  side="top"
-                  sideOffset={5}
-                  avoidCollisions={true}
-                  collisionPadding={10}
-                >
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={formData.date}
-                    onSelect={(date) => {
+                    onSelect={(date: Date | undefined) => {
                       if (date) {
                         setFormData({ ...formData, date, startTime: '' });
                       }
                     }}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today;
+                    }}
                     initialFocus
                     locale={ptBR}
+                    showOutsideDays={false}
                   />
                 </PopoverContent>
               </Popover>
             </div>
+
+
+
 
 
           {/* Time Slot */}
@@ -361,8 +362,8 @@ export function AppointmentModal({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={loading || !formData.clientId || !formData.professionalId || !formData.serviceId || !formData.date || !formData.startTime}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

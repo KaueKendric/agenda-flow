@@ -48,7 +48,7 @@ export const authService = {
 
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/register', data);
-    return response.data; // ✅ ADICIONADO
+    return response.data;
   },
 
   logout: () => {
@@ -61,7 +61,12 @@ export const authService = {
     return userStr ? JSON.parse(userStr) : null;
   },
 
-  isAuthenticated: () => {
+  isAuthenticated: (): boolean => {
     return !!localStorage.getItem('token');
+  },
+
+  // ✅ NOVO: Adicionar getToken
+  getToken: (): string | null => {
+    return localStorage.getItem('token');
   },
 };

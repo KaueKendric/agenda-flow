@@ -18,25 +18,29 @@ import { AppointmentDetailsModal } from '@/components/appointments/AppointmentDe
 import { AppointmentCalendar } from '@/components/appointments/AppointmentCalendar';
 import type { Appointment, AppointmentStatus, Pagination } from '@/types/appointment';
 
-// Temporary placeholder data - SUBSTITUIR com IDs reais do banco de dados
-// Para obter IDs reais: npx prisma studio (no backend) e copiar os UUIDs
-const PLACEHOLDER_PROFESSIONALS = [
-  { id: '1', name: 'Dr. João Silva' },
-  { id: '2', name: 'Dra. Maria Santos' },
-  { id: '3', name: 'Dr. Pedro Costa' },
-];
+// ✅ Tipos para as respostas da API
+interface ProfessionalResponse {
+  id: string;
+  user?: {
+    name?: string;
+  };
+  name?: string;
+}
 
-const PLACEHOLDER_SERVICES = [
-  { id: '1', name: 'Consulta Geral', duration: 30, price: '150.00' },
-  { id: '2', name: 'Avaliação', duration: 60, price: '250.00' },
-  { id: '3', name: 'Retorno', duration: 20, price: '80.00' },
-];
+interface ServiceResponse {
+  id: string;
+  name: string;
+  duration: number;
+  price: number | string;
+}
 
-const PLACEHOLDER_CLIENTS = [
-  { id: '1', name: 'Ana Costa' },
-  { id: '2', name: 'Carlos Oliveira' },
-  { id: '3', name: 'Beatriz Lima' },
-];
+interface ClientResponse {
+  id: string;
+  user?: {
+    name?: string;
+  };
+  name?: string;
+}
 
 export default function Appointments() {
   const navigate = useNavigate();
@@ -51,6 +55,11 @@ export default function Appointments() {
     limit: 10,
     totalPages: 0,
   });
+
+  const [professionals, setProfessionals] = useState<{ id: string; name: string }[]>([]);
+  const [services, setServices] = useState<{ id: string; name: string; duration: number; price: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   const [filters, setFilters] = useState({
     status: [] as string[],
@@ -72,10 +81,75 @@ export default function Appointments() {
     }
   }, [navigate]);
 
+  // Buscar profissionais, serviços e clientes reais
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      setLoadingData(true);
+      try {
+        const token = authService.getToken();
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+
+        const [profsRes, servicesRes, clientsRes] = await Promise.all([
+          fetch('http://localhost:3333/api/professionals', { headers }),
+          fetch('http://localhost:3333/api/services', { headers }),
+          fetch('http://localhost:3333/api/clients', { headers }),
+        ]);
+
+        if (profsRes.ok) {
+          const profsData = await profsRes.json();
+          const profsList = Array.isArray(profsData) ? profsData : (profsData.professionals || []);
+          setProfessionals(
+            profsList.map((p: ProfessionalResponse) => ({
+              id: p.id,
+              name: p.user?.name || p.name || 'Sem nome',
+            }))
+          );
+        }
+
+        if (servicesRes.ok) {
+          const servicesData = await servicesRes.json();
+          const servicesList = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
+          setServices(
+            servicesList.map((s: ServiceResponse) => ({
+              id: s.id,
+              name: s.name,
+              duration: s.duration,
+              price: s.price.toString(),
+            }))
+          );
+        }
+
+        if (clientsRes.ok) {
+          const clientsData = await clientsRes.json();
+          const clientsList = Array.isArray(clientsData) ? clientsData : (clientsData.clients || []);
+          setClients(
+            clientsList.map((c: ClientResponse) => ({
+              id: c.id,
+              name: c.user?.name || c.name || 'Sem nome',
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar dados:', error);
+        toast({
+          title: 'Aviso',
+          description: 'Alguns dados podem não estar disponíveis.',
+          variant: 'default',
+        });
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [toast]);
+
   // Fetch appointments
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
-    console.log('🔍 Fetching appointments...');
     try {
       const params: Record<string, string | number | string[] | undefined> = {
         page: pagination.page,
@@ -86,14 +160,11 @@ export default function Appointments() {
         search: filters.search || undefined,
       };
 
-      // Add status as array
       if (filters.status.length > 0) {
         params.status = filters.status;
       }
 
-      console.log('📤 Request params:', params);
       const response = await appointmentsApi.list(params);
-      console.log('📥 API Response:', response);
       
       setAppointments(response.appointments || []);
       setPagination(response.pagination || {
@@ -102,7 +173,6 @@ export default function Appointments() {
         total: 0,
         totalPages: 0,
       });
-      console.log('✅ Appointments loaded:', response.appointments?.length || 0);
     } catch (error) {
       console.error('❌ Failed to fetch appointments:', error);
       toast({
@@ -160,7 +230,6 @@ export default function Appointments() {
     try {
       await appointmentsApi.updateStatus(id, status);
       
-      // Update local state
       setAppointments((prev: Appointment[]) =>
         prev.map((apt) => (apt.id === id ? { ...apt, status } : apt))
       );
@@ -174,7 +243,6 @@ export default function Appointments() {
         description: 'Status atualizado com sucesso.',
       });
       
-      // Refresh list
       fetchAppointments();
     } catch (error) {
       console.error('Failed to update status:', error);
@@ -198,7 +266,6 @@ export default function Appointments() {
       setEditingAppointment(null);
       setIsCreateModalOpen(false);
       
-      // Refresh appointments list
       await fetchAppointments();
     } catch (error) {
       console.error('Failed to save:', error);
@@ -238,19 +305,20 @@ export default function Appointments() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold">Agendamentos</h1>
-                <Button onClick={() => {
-                  setEditingAppointment(null);
-                  setIsCreateModalOpen(true);
-                }}>
+                <Button 
+                  onClick={() => {
+                    setEditingAppointment(null);
+                    setIsCreateModalOpen(true);
+                  }}
+                  disabled={loadingData}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Agendamento
                 </Button>
               </div>
 
-              {/* Tabs */}
               <Tabs defaultValue="list" className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="list" className="gap-2">
@@ -264,17 +332,15 @@ export default function Appointments() {
                 </TabsList>
 
                 <TabsContent value="list" className="space-y-4">
-                  {/* Filters */}
                   <div className="bg-card rounded-lg border p-4">
                     <AppointmentFilters
                       filters={filters}
                       onFiltersChange={handleFiltersChange}
-                      professionals={PLACEHOLDER_PROFESSIONALS}
-                      services={PLACEHOLDER_SERVICES}
+                      professionals={professionals}
+                      services={services}
                     />
                   </div>
 
-                  {/* List */}
                   <AppointmentsList
                     appointments={appointments}
                     loading={loading}
@@ -298,7 +364,6 @@ export default function Appointments() {
         </div>
       </div>
 
-      {/* Modals */}
       <AppointmentModal
         open={isCreateModalOpen}
         onOpenChange={(open) => {
@@ -307,9 +372,9 @@ export default function Appointments() {
         }}
         appointment={editingAppointment}
         onSave={handleSave}
-        professionals={PLACEHOLDER_PROFESSIONALS}
-        services={PLACEHOLDER_SERVICES}
-        clients={PLACEHOLDER_CLIENTS}
+        professionals={professionals}
+        services={services}
+        clients={clients}
       />
 
       <AppointmentDetailsModal

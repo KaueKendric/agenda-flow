@@ -337,6 +337,11 @@ export class AppointmentsService {
 
   // ==================== HORÁRIOS DISPONÍVEIS ====================
   async getAvailableSlots(query: AvailableSlotsQuery) {
+    console.log('📥 Query recebida:', query)
+  console.log('📥 Tipo da query:', typeof query)
+  console.log('📥 professionalId:', query.professionalId, typeof query.professionalId)
+  console.log('📥 serviceId:', query.serviceId, typeof query.serviceId)
+  console.log('📥 date:', query.date, typeof query.date)
     const { professionalId, serviceId, date } = query
 
     // 1. Buscar o serviço para saber a duração

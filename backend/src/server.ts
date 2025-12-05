@@ -14,6 +14,9 @@ import { dashboardRoutes } from './modules/dashboard/dashboard.routes'
 import { prisma } from './utils/prisma'
 import { appointmentsRoutes } from './modules/appointments/appointments.routes' 
 import { testRoutes } from './test-routes'
+import { servicesRoutes } from './modules/services/services.routes'
+import { clientsRoutes } from './modules/clients/clients.routes'
+import { professionalsRoutes } from './modules/professionals/professionals.routes'
 
 // ✅ Validação de variáveis obrigatórias
 if (!process.env.JWT_SECRET) {
@@ -76,6 +79,9 @@ app.register(authRoutes, { prefix: '/api/auth' })
 app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(appointmentsRoutes, { prefix: '/api/appointments' })
 app.register(testRoutes, { prefix: '/api' })
+app.register(servicesRoutes, { prefix: '/api/services' })
+app.register(clientsRoutes, { prefix: '/api/clients' })
+app.register(professionalsRoutes, { prefix: '/api/professionals' })
 
 // Health check
 app.get('/health', async () => {
