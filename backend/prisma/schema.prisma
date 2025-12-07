@@ -38,20 +38,21 @@ model User {
 }
 
 model Client {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String
-  email       String
-  phone       String?
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  company     String?
-  cpf         String?   @unique
-  birthDate   DateTime?
-  tags        String[]  @default([])
-  notes       String?   @db.Text
-  preferences Json?
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  email         String
+  phone         String?
+  address       String?
+  addressNumber String?
+  city          String?
+  state         String?
+  zipCode       String?
+  company       String?
+  cpf           String?   @unique
+  birthDate     DateTime?
+  tags          String[]  @default([])
+  notes         String?   @db.Text
+  preferences   Json?
 
   appointments Appointment[]
 

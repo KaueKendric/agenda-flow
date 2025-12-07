@@ -1,65 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { Plus, List, CalendarDays } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/layout/AppSidebar';
-import { DashboardHeader } from '@/components/layout/DashboardHeader';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/lib/api';
-import { appointmentsApi } from '@/lib/appointments-api';
-import { AppointmentFilters } from '@/components/appointments/AppointmentFilters';
-import { AppointmentsList } from '@/components/appointments/AppointmentsList';
-import { AppointmentModal } from '@/components/appointments/AppointmentModal';
-import { AppointmentDetailsModal } from '@/components/appointments/AppointmentDetailsModal';
-import { AppointmentCalendar } from '@/components/appointments/AppointmentCalendar';
-import type { Appointment, AppointmentStatus, Pagination } from '@/types/appointment';
-
-// ✅ Tipos para as respostas da API
-interface ProfessionalResponse {
-  id: string;
-  user?: {
-    name?: string;
-  };
-  name?: string;
-}
-
-interface ServiceResponse {
-  id: string;
-  name: string;
-  duration: number;
-  price: number | string;
-}
-
-interface ClientResponse {
-  id: string;
-  user?: {
-    name?: string;
-  };
-  name?: string;
-}
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { format } from 'date-fns'
+import { Plus, List, CalendarDays } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { SidebarProvider } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/layout/AppSidebar'
+import { DashboardHeader } from '@/components/layout/DashboardHeader'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/hooks/use-toast'
+import { authService } from '@/lib/api'
+import { appointmentsApi } from '@/lib/appointments-api'
+import { professionalsApi, type Professional } from '@/lib/professionals-api'
+import { servicesApi, type Service } from '@/lib/services-api'
+import { clientsApi } from '@/lib/clients-api'
+import { AppointmentFilters } from '@/components/appointments/AppointmentFilters'
+import { AppointmentsList } from '@/components/appointments/AppointmentsList'
+import { AppointmentModal } from '@/components/appointments/AppointmentModal'
+import { AppointmentDetailsModal } from '@/components/appointments/AppointmentDetailsModal'
+import { AppointmentCalendar } from '@/components/appointments/AppointmentCalendar'
+import { DayAppointmentsModal } from '@/components/appointments/DayAppointmentsModal'
+import type { Appointment, AppointmentStatus, Pagination } from '@/types/appointment'
 
 export default function Appointments() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [user] = useState(() => authService.getStoredUser());
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { toast } = useToast()
+  const [user] = useState(() => authService.getStoredUser())
 
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [loading, setLoading] = useState(true)
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
     page: 1,
     limit: 10,
     totalPages: 0,
-  });
+  })
 
-  const [professionals, setProfessionals] = useState<{ id: string; name: string }[]>([]);
-  const [services, setServices] = useState<{ id: string; name: string; duration: number; price: string }[]>([]);
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [professionals, setProfessionals] = useState<{ id: string; name: string }[]>([])
+  const [services, setServices] = useState<{ id: string; name: string; duration: number; price: string }[]>([])
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([])
+  const [loadingData, setLoadingData] = useState(true)
 
   const [filters, setFilters] = useState({
     status: [] as string[],
@@ -67,89 +48,100 @@ export default function Appointments() {
     serviceId: '',
     date: undefined as Date | undefined,
     search: '',
-  });
+  })
 
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>('list')
 
-  // Check authentication
+  // Novo: modal de agendamentos do dia
+  const [dayModalOpen, setDayModalOpen] = useState(false)
+  const [dayModalDate, setDayModalDate] = useState<Date | null>(null)
+
   useEffect(() => {
     if (!authService.isAuthenticated()) {
-      navigate('/auth');
+      navigate('/auth')
     }
-  }, [navigate]);
+  }, [navigate])
 
-  // Buscar profissionais, serviços e clientes reais
+  // Ler parâmetros da URL (date, view, dayModal)
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    const viewParam = searchParams.get('view')
+    const dayModalParam = searchParams.get('dayModal')
+
+    if (dateParam) {
+      const date = new Date(dateParam + 'T12:00:00')
+      setFilters((prev) => ({ ...prev, date }))
+      setDayModalDate(date)
+      searchParams.delete('date')
+    }
+
+    if (viewParam === 'calendar') {
+      setActiveTab('calendar')
+      searchParams.delete('view')
+    }
+
+    if (dayModalParam === '1') {
+      setDayModalOpen(true)
+      searchParams.delete('dayModal')
+    }
+
+    setSearchParams(searchParams)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Metadados
   useEffect(() => {
     const fetchMetadata = async () => {
-      setLoadingData(true);
+      setLoadingData(true)
       try {
-        const token = authService.getToken();
-        const headers = {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        };
+        const [profsData, servicesData, clientsData] = await Promise.all([
+          professionalsApi.list(),
+          servicesApi.list(),
+          clientsApi.listSimple(),
+        ])
 
-        const [profsRes, servicesRes, clientsRes] = await Promise.all([
-          fetch('http://localhost:3333/api/professionals', { headers }),
-          fetch('http://localhost:3333/api/services', { headers }),
-          fetch('http://localhost:3333/api/clients', { headers }),
-        ]);
-
-        if (profsRes.ok) {
-          const profsData = await profsRes.json();
-          const profsList = Array.isArray(profsData) ? profsData : (profsData.professionals || []);
-          setProfessionals(
-            profsList.map((p: ProfessionalResponse) => ({
-              id: p.id,
-              name: p.user?.name || p.name || 'Sem nome',
-            }))
-          );
-        }
-
-        if (servicesRes.ok) {
-          const servicesData = await servicesRes.json();
-          const servicesList = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
-          setServices(
-            servicesList.map((s: ServiceResponse) => ({
-              id: s.id,
-              name: s.name,
-              duration: s.duration,
-              price: s.price.toString(),
-            }))
-          );
-        }
-
-        if (clientsRes.ok) {
-          const clientsData = await clientsRes.json();
-          const clientsList = Array.isArray(clientsData) ? clientsData : (clientsData.clients || []);
-          setClients(
-            clientsList.map((c: ClientResponse) => ({
-              id: c.id,
-              name: c.user?.name || c.name || 'Sem nome',
-            }))
-          );
-        }
+        setProfessionals(
+          profsData.map((p: Professional) => ({
+            id: p.id,
+            name: p.user?.name || p.name || 'Sem nome',
+          }))
+        )
+        setServices(
+          servicesData.map((s: Service) => ({
+            id: s.id,
+            name: s.name,
+            duration: s.duration,
+            price: s.price.toString(),
+          }))
+        )
+        setClients(
+          clientsData.map((c) => ({
+            id: c.id,
+            name: c.name || 'Sem nome',
+          }))
+        )
       } catch (error) {
-        console.error('❌ Erro ao buscar dados:', error);
+        console.error('❌ Erro ao buscar dados:', error)
         toast({
           title: 'Aviso',
           description: 'Alguns dados podem não estar disponíveis.',
           variant: 'default',
-        });
+        })
       } finally {
-        setLoadingData(false);
+        setLoadingData(false)
       }
-    };
+    }
 
-    fetchMetadata();
-  }, [toast]);
+    fetchMetadata()
+  }, [toast])
 
-  // Fetch appointments
+  // Agendamentos
   const fetchAppointments = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       const params: Record<string, string | number | string[] | undefined> = {
         page: pagination.page,
@@ -158,101 +150,86 @@ export default function Appointments() {
         serviceId: filters.serviceId || undefined,
         date: filters.date ? format(filters.date, 'yyyy-MM-dd') : undefined,
         search: filters.search || undefined,
-      };
-
-      if (filters.status.length > 0) {
-        params.status = filters.status;
       }
+      if (filters.status.length > 0) params.status = filters.status
 
-      const response = await appointmentsApi.list(params);
-      
-      setAppointments(response.appointments || []);
-      setPagination(response.pagination || {
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0,
-      });
+      const response = await appointmentsApi.list(params)
+      setAppointments(response.appointments || [])
+      setPagination(
+        response.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 }
+      )
     } catch (error) {
-      console.error('❌ Failed to fetch appointments:', error);
+      console.error('❌ Failed to fetch appointments:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os agendamentos.',
         variant: 'destructive',
-      });
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [filters, pagination.page, pagination.limit, toast]);
+  }, [filters, pagination.page, pagination.limit, toast])
 
   useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+    fetchAppointments()
+  }, [fetchAppointments])
 
   const handlePageChange = (page: number) => {
-    setPagination((prev: Pagination) => ({ ...prev, page }));
-  };
+    setPagination((prev: Pagination) => ({ ...prev, page }))
+  }
 
   const handleFiltersChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
-    setPagination((prev: Pagination) => ({ ...prev, page: 1 }));
-  };
+    setFilters(newFilters)
+    setPagination((prev: Pagination) => ({ ...prev, page: 1 }))
+  }
 
   const handleView = (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    setIsDetailsModalOpen(true);
-  };
+    setSelectedAppointment(appointment)
+    setIsDetailsModalOpen(true)
+  }
 
   const handleEdit = (appointment: Appointment) => {
-    setEditingAppointment(appointment);
-    setIsCreateModalOpen(true);
-  };
+    setEditingAppointment(appointment)
+    setIsCreateModalOpen(true)
+  }
 
   const handleCancel = async (appointment: Appointment) => {
     try {
-      await appointmentsApi.updateStatus(appointment.id, 'CANCELLED');
-      toast({
-        title: 'Sucesso',
-        description: 'Agendamento cancelado com sucesso.',
-      });
-      fetchAppointments();
+      await appointmentsApi.updateStatus(appointment.id, 'CANCELLED')
+      toast({ title: 'Sucesso', description: 'Agendamento cancelado com sucesso.' })
+      fetchAppointments()
     } catch (error) {
-      console.error('Failed to cancel appointment:', error);
+      console.error('Failed to cancel appointment:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível cancelar o agendamento.',
         variant: 'destructive',
-      });
+      })
     }
-  };
+  }
 
   const handleStatusChange = async (id: string, status: AppointmentStatus) => {
     try {
-      await appointmentsApi.updateStatus(id, status);
-      
+      await appointmentsApi.updateStatus(id, status)
       setAppointments((prev: Appointment[]) =>
         prev.map((apt) => (apt.id === id ? { ...apt, status } : apt))
-      );
-      
+      )
       if (selectedAppointment?.id === id) {
-        setSelectedAppointment((prev: Appointment | null) => (prev ? { ...prev, status } : null));
+        setSelectedAppointment((prev: Appointment | null) =>
+          prev ? { ...prev, status } : null
+        )
       }
-      
-      toast({
-        title: 'Sucesso',
-        description: 'Status atualizado com sucesso.',
-      });
-      
-      fetchAppointments();
+      toast({ title: 'Sucesso', description: 'Status atualizado com sucesso.' })
+      fetchAppointments()
     } catch (error) {
-      console.error('Failed to update status:', error);
+      console.error('Failed to update status:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível atualizar o status.',
         variant: 'destructive',
-      });
+      })
     }
-  };
+  }
 
   const handleSave = async () => {
     try {
@@ -261,37 +238,36 @@ export default function Appointments() {
         description: editingAppointment
           ? 'Agendamento atualizado com sucesso.'
           : 'Agendamento criado com sucesso.',
-      });
-      
-      setEditingAppointment(null);
-      setIsCreateModalOpen(false);
-      
-      await fetchAppointments();
+      })
+      setEditingAppointment(null)
+      setIsCreateModalOpen(false)
+      await fetchAppointments()
     } catch (error) {
-      console.error('Failed to save:', error);
+      console.error('Failed to save:', error)
     }
-  };
+  }
 
   const handleCalendarAppointmentClick = async (appointmentId: string) => {
     try {
-      const appointment = await appointmentsApi.getById(appointmentId);
-      setSelectedAppointment(appointment);
-      setIsDetailsModalOpen(true);
+      const appointment = await appointmentsApi.getById(appointmentId)
+      setSelectedAppointment(appointment)
+      setIsDetailsModalOpen(true)
     } catch (error) {
-      console.error('Failed to fetch appointment details:', error);
+      console.error('Failed to fetch appointment details:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os detalhes do agendamento.',
         variant: 'destructive',
-      });
+      })
     }
-  };
+  }
 
+  // Agora clicar em um dia abre o modal do dia (não cria novo agendamento)
   const handleCalendarDayClick = (date: Date) => {
-    setFilters((prev: typeof filters) => ({ ...prev, date }));
-    setEditingAppointment(null);
-    setIsCreateModalOpen(true);
-  };
+    setFilters((prev: typeof filters) => ({ ...prev, date }))
+    setDayModalDate(date)
+    setDayModalOpen(true)
+  }
 
   return (
     <SidebarProvider>
@@ -307,10 +283,10 @@ export default function Appointments() {
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold">Agendamentos</h1>
-                <Button 
+                <Button
                   onClick={() => {
-                    setEditingAppointment(null);
-                    setIsCreateModalOpen(true);
+                    setEditingAppointment(null)
+                    setIsCreateModalOpen(true)
                   }}
                   disabled={loadingData}
                 >
@@ -319,7 +295,7 @@ export default function Appointments() {
                 </Button>
               </div>
 
-              <Tabs defaultValue="list" className="space-y-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="list" className="gap-2">
                     <List className="h-4 w-4" />
@@ -356,6 +332,7 @@ export default function Appointments() {
                   <AppointmentCalendar
                     onAppointmentClick={handleCalendarAppointmentClick}
                     onDayClick={handleCalendarDayClick}
+                    initialDate={filters.date}
                   />
                 </TabsContent>
               </Tabs>
@@ -367,8 +344,8 @@ export default function Appointments() {
       <AppointmentModal
         open={isCreateModalOpen}
         onOpenChange={(open) => {
-          setIsCreateModalOpen(open);
-          if (!open) setEditingAppointment(null);
+          setIsCreateModalOpen(open)
+          if (!open) setEditingAppointment(null)
         }}
         appointment={editingAppointment}
         onSave={handleSave}
@@ -384,6 +361,13 @@ export default function Appointments() {
         onStatusChange={handleStatusChange}
         onEdit={handleEdit}
       />
+
+      <DayAppointmentsModal
+        open={dayModalOpen}
+        onOpenChange={setDayModalOpen}
+        date={dayModalDate}
+        onAppointmentClick={handleCalendarAppointmentClick}
+      />
     </SidebarProvider>
-  );
+  )
 }

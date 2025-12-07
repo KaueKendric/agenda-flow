@@ -36,11 +36,9 @@ export class AppointmentsService {
 
     // Filtro por data específica
     if (date) {
-      const startOfDay = new Date(date)
-      startOfDay.setHours(0, 0, 0, 0)
-      
-      const endOfDay = new Date(date)
-      endOfDay.setHours(23, 59, 59, 999)
+      const [year, month, day] = date.split('-').map(Number)
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0)
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999)
 
       where.dateTime = {
         gte: startOfDay,
@@ -56,7 +54,7 @@ export class AppointmentsService {
       }
     }
 
-    // Busca por nome do cliente (agora em Client.name)
+    // Busca por nome do cliente
     if (search) {
       where.client = {
         name: {
@@ -160,10 +158,21 @@ export class AppointmentsService {
     const endTime = this.calculateEndTime(startTime, service.duration)
 
     // 5. Validar conflito de horários
-    await this.validateTimeConflict(professionalId, new Date(date), startTime, endTime)
+    const [year, month, day] = date.split('-').map(Number)
+    const appointmentDate = new Date(year, month - 1, day)
+    
+    await this.validateTimeConflict(
+      professionalId, 
+      appointmentDate, 
+      startTime, 
+      endTime, 
+      service.duration
+    )
 
     // 6. Criar o agendamento
-    const dateTime = new Date(`${date.split('T')[0]}T${startTime}:00`)
+    const dateTime = new Date(year, month - 1, day)
+    const [hours, minutes] = startTime.split(':').map(Number)
+    dateTime.setHours(hours, minutes, 0, 0)
 
     const appointment = await prisma.appointment.create({
       data: {
@@ -258,7 +267,6 @@ export class AppointmentsService {
       const newDate = data.date ? new Date(data.date) : appointment.dateTime
       const newStartTime = data.startTime || appointment.startTime
       
-      // Calcular novo endTime e duration se mudou startTime ou serviceId
       let newEndTime = appointment.endTime
       let newDuration = appointment.duration
       
@@ -276,9 +284,15 @@ export class AppointmentsService {
 
       const professionalId = data.professionalId || appointment.professionalId
       
-      await this.validateTimeConflict(professionalId, newDate, newStartTime, newEndTime, id)
+      await this.validateTimeConflict(
+        professionalId, 
+        newDate, 
+        newStartTime, 
+        newEndTime, 
+        newDuration, 
+        id
+      )
       
-      // Adicionar campos calculados ao data
       data = { 
         ...data, 
         endTime: newEndTime,
@@ -290,9 +304,14 @@ export class AppointmentsService {
     let updateData: any = { ...data }
     
     if (data.date) {
-      const dateStr = data.date.split('T')[0]
+      const [year, month, day] = data.date.split('-').map(Number)
       const timeStr = data.startTime || appointment.startTime
-      updateData.dateTime = new Date(`${dateStr}T${timeStr}:00`)
+      const [hours, minutes] = timeStr.split(':').map(Number)
+      
+      const dateTime = new Date(year, month - 1, day)
+      dateTime.setHours(hours, minutes, 0, 0)
+      
+      updateData.dateTime = dateTime
     }
 
     const updatedAppointment = await prisma.appointment.update({
@@ -347,7 +366,6 @@ export class AppointmentsService {
       throw new Error('Agendamento não encontrado')
     }
 
-    // Marcar como cancelado
     return prisma.appointment.update({
       where: { id },
       data: { 
@@ -356,13 +374,9 @@ export class AppointmentsService {
     })
   }
 
-  // ==================== HORÁRIOS DISPONÍVEIS ====================
+  // ==================== HORÁRIOS DISPONÍVEIS (CORRIGIDO) ====================
   async getAvailableSlots(query: AvailableSlotsQuery) {
-    console.log('📥 Query recebida:', query)
-    console.log('📥 Tipo da query:', typeof query)
-    console.log('📥 professionalId:', query.professionalId, typeof query.professionalId)
-    console.log('📥 serviceId:', query.serviceId, typeof query.serviceId)
-    console.log('📥 date:', query.date, typeof query.date)
+    console.log('📥 Buscando slots disponíveis:', query)
 
     const { professionalId, serviceId, date } = query
 
@@ -375,12 +389,20 @@ export class AppointmentsService {
       throw new Error('Serviço não encontrado')
     }
 
-    // 2. Buscar agendamentos existentes do profissional neste dia
-    const startOfDay = new Date(date)
-    startOfDay.setHours(0, 0, 0, 0)
+    console.log(`🎯 Serviço: ${service.name} (${service.duration} min)`)
+
+    // 2. Buscar agendamentos existentes do profissional neste dia (CORRIGIDO)
+    const [year, month, day] = date.split('-').map(Number)
     
-    const endOfDay = new Date(date)
-    endOfDay.setHours(23, 59, 59, 999)
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0)
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999)
+
+    console.log('📅 Range de busca:', {
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString(),
+      startOfDayLocal: startOfDay.toLocaleString('pt-BR'),
+      endOfDayLocal: endOfDay.toLocaleString('pt-BR'),
+    })
 
     const existingAppointments = await prisma.appointment.findMany({
       where: {
@@ -394,21 +416,38 @@ export class AppointmentsService {
         },
       },
       select: {
+        id: true,
         startTime: true,
         endTime: true,
+        duration: true,
+        dateTime: true,
       },
       orderBy: {
         startTime: 'asc',
       },
     })
 
+    console.log(`📅 Agendamentos existentes: ${existingAppointments.length}`)
+    
+    if (existingAppointments.length > 0) {
+      console.log('📋 Detalhes dos agendamentos:')
+      existingAppointments.forEach((apt, index) => {
+        console.log(`   ${index + 1}. ${apt.startTime} - ${apt.endTime} (${apt.duration} min) | dateTime: ${apt.dateTime.toISOString()}`)
+      })
+    }
+
     // 3. Gerar slots disponíveis
     const availableSlots = this.generateAvailableSlots(
       existingAppointments,
       service.duration,
       '08:00',
-      '18:00',
+      '20:00',
     )
+
+    console.log(`✅ Slots disponíveis: ${availableSlots.length}`)
+    if (availableSlots.length > 0) {
+      console.log('🕐 Alguns slots disponíveis:', availableSlots.slice(0, 5).join(', '))
+    }
 
     return availableSlots
   }
@@ -460,18 +499,30 @@ export class AppointmentsService {
     return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
   }
 
+  // VALIDAÇÃO MELHORADA - Considera a duração completa dos agendamentos
   private async validateTimeConflict(
     professionalId: string,
     date: Date,
     startTime: string,
     endTime: string,
+    durationMinutes: number,
     excludeAppointmentId?: string
   ) {
-    const startOfDay = new Date(date)
-    startOfDay.setHours(0, 0, 0, 0)
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const day = date.getDate()
     
-    const endOfDay = new Date(date)
-    endOfDay.setHours(23, 59, 59, 999)
+    const startOfDay = new Date(year, month, day, 0, 0, 0, 0)
+    const endOfDay = new Date(year, month, day, 23, 59, 59, 999)
+
+    console.log('🔍 Validando conflito:', {
+      professionalId,
+      date: date.toLocaleDateString('pt-BR'),
+      startTime,
+      endTime,
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString(),
+    })
 
     const where: any = {
       professionalId,
@@ -494,60 +545,88 @@ export class AppointmentsService {
         id: true,
         startTime: true,
         endTime: true,
+        duration: true,
+        dateTime: true,
       },
     })
 
+    console.log(`📅 Encontrados ${existingAppointments.length} agendamentos para validar`)
+
+    const newStartMinutes = this.timeToMinutes(startTime)
+    const newEndMinutes = this.timeToMinutes(endTime)
+
     for (const apt of existingAppointments) {
+      const aptStartMinutes = this.timeToMinutes(apt.startTime)
+      const aptEndMinutes = this.timeToMinutes(apt.endTime)
+
       const hasConflict = 
-        (startTime >= apt.startTime && startTime < apt.endTime) ||
-        (endTime > apt.startTime && endTime <= apt.endTime) ||
-        (startTime <= apt.startTime && endTime >= apt.endTime)
+        (newStartMinutes >= aptStartMinutes && newStartMinutes < aptEndMinutes) ||
+        (newEndMinutes > aptStartMinutes && newEndMinutes <= aptEndMinutes) ||
+        (newStartMinutes <= aptStartMinutes && newEndMinutes >= aptEndMinutes)
 
       if (hasConflict) {
         throw new Error(
-          `Conflito de horários: profissional já possui agendamento entre ${apt.startTime} e ${apt.endTime}`
+          `❌ Conflito de horários: já existe agendamento entre ${apt.startTime} e ${apt.endTime}`
         )
       }
     }
+
+    console.log('✅ Sem conflitos!')
   }
 
+  // GERAÇÃO DE SLOTS MELHORADA
   private generateAvailableSlots(
-    existingAppointments: { startTime: string; endTime: string }[],
-    durationMinutes: number,
+    existingAppointments: { startTime: string; endTime: string; duration: number }[],
+    serviceDurationMinutes: number,
     workStartTime: string,
     workEndTime: string,
   ): string[] {
     const slots: string[] = []
     
-    const [startHour, startMinute] = workStartTime.split(':').map(Number)
-    const [endHour, endMinute] = workEndTime.split(':').map(Number)
+    const workStartMinutes = this.timeToMinutes(workStartTime)
+    const workEndMinutes = this.timeToMinutes(workEndTime)
     
-    let currentMinutes = startHour * 60 + startMinute
-    const endMinutes = endHour * 60 + endMinute
-
     const slotInterval = 30
 
-    while (currentMinutes + durationMinutes <= endMinutes) {
-      const slotHour = Math.floor(currentMinutes / 60)
-      const slotMinute = currentMinutes % 60
-      const slotTime = `${String(slotHour).padStart(2, '0')}:${String(slotMinute).padStart(2, '0')}`
-      const slotEndTime = this.calculateEndTime(slotTime, durationMinutes)
+    for (let currentMinutes = workStartMinutes; currentMinutes < workEndMinutes; currentMinutes += slotInterval) {
+      const slotTime = this.minutesToTime(currentMinutes)
+      const slotEndMinutes = currentMinutes + serviceDurationMinutes
+
+      if (slotEndMinutes > workEndMinutes) {
+        continue
+      }
+
+      const slotEndTime = this.minutesToTime(slotEndMinutes)
 
       const hasConflict = existingAppointments.some(apt => {
+        const aptStartMinutes = this.timeToMinutes(apt.startTime)
+        const aptEndMinutes = this.timeToMinutes(apt.endTime)
+
         return (
-          (slotTime >= apt.startTime && slotTime < apt.endTime) ||
-          (slotEndTime > apt.startTime && slotEndTime <= apt.endTime) ||
-          (slotTime <= apt.startTime && slotEndTime >= apt.endTime)
+          (currentMinutes >= aptStartMinutes && currentMinutes < aptEndMinutes) ||
+          (slotEndMinutes > aptStartMinutes && slotEndMinutes <= aptEndMinutes) ||
+          (currentMinutes <= aptStartMinutes && slotEndMinutes >= aptEndMinutes)
         )
       })
 
       if (!hasConflict) {
         slots.push(slotTime)
+      } else {
+        console.log(`   ❌ Slot ${slotTime} - ${slotEndTime} bloqueado (conflito)`)
       }
-
-      currentMinutes += slotInterval
     }
 
     return slots
+  }
+
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number)
+    return hours * 60 + minutes
+  }
+
+  private minutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
   }
 }

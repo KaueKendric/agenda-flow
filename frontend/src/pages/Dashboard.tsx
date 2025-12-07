@@ -54,7 +54,6 @@ const Dashboard = () => {
     return storedUser;
   }, [navigate]);
 
-  // ✅ Usar useCallback para criar função reutilizável
   const loadDashboardData = useCallback(async () => {
     if (!user) return;
 
@@ -193,7 +192,7 @@ const Dashboard = () => {
                 <div className="lg:col-span-2">
                   <UpcomingAppointments 
                     data={data?.upcoming || []} 
-                    onUpdate={loadDashboardData} // ✅ Passar callback
+                    onUpdate={loadDashboardData} 
                   />
                 </div>
                 <MiniCalendar />

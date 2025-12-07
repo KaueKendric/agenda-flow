@@ -65,7 +65,6 @@ export const authService = {
     return !!localStorage.getItem('token');
   },
 
-  // ✅ NOVO: Adicionar getToken
   getToken: (): string | null => {
     return localStorage.getItem('token');
   },

@@ -7,9 +7,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ClientActions } from './ClientActions'
-import { ArrowUpDown, Users } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ClientActions } from './ClientActions'
+import { ArrowUpDown, Users, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Client } from '@/types/clients'
@@ -17,16 +19,20 @@ import type { Client } from '@/types/clients'
 interface ClientTableProps {
   clients: Client[]
   isLoading: boolean
-  onSort: (column: 'name' | 'email' | 'city' | 'createdAt') => void
+  onSort: (column: 'name' | 'email' | 'city' | 'createdAt' | 'totalAppointments') => void
   onEdit: (client: Client) => void
   onDelete: (id: string) => void
+  onViewDetails: (clientId: string) => void
   deletingId?: string
+  selectedIds: string[]
+  onSelectAll: (checked: boolean) => void
+  onSelectOne: (id: string, checked: boolean) => void
 }
 
 interface SortButtonProps {
-  column: 'name' | 'email' | 'city' | 'createdAt'
+  column: 'name' | 'email' | 'city' | 'createdAt' | 'totalAppointments'
   children: React.ReactNode
-  onSort: (column: 'name' | 'email' | 'city' | 'createdAt') => void
+  onSort: (column: 'name' | 'email' | 'city' | 'createdAt' | 'totalAppointments') => void
 }
 
 function SortButton({ column, children, onSort }: SortButtonProps) {
@@ -49,7 +55,11 @@ export function ClientTable({
   onSort,
   onEdit,
   onDelete,
+  onViewDetails,
   deletingId,
+  selectedIds,
+  onSelectAll,
+  onSelectOne,
 }: ClientTableProps) {
   if (isLoading) {
     return (
@@ -57,17 +67,23 @@ export function ClientTable({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]"></TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Telefone</TableHead>
-              <TableHead>Cidade</TableHead>
-              <TableHead>Criado em</TableHead>
-              <TableHead className="w-[100px]">Ações</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Agendamentos</TableHead>
+              <TableHead>Último Agendamento</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[120px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="h-4 w-4" />
+                </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-32" />
                 </TableCell>
@@ -78,10 +94,16 @@ export function ClientTable({
                   <Skeleton className="h-4 w-28" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-12" />
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-20" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-8 w-20" />
@@ -108,11 +130,22 @@ export function ClientTable({
     )
   }
 
+  const allSelected = clients.length > 0 && selectedIds.length === clients.length
+  const someSelected = selectedIds.length > 0 && selectedIds.length < clients.length
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={onSelectAll}
+                aria-label="Selecionar todos"
+                className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+              />
+            </TableHead>
             <TableHead>
               <SortButton column="name" onSort={onSort}>
                 Nome
@@ -124,44 +157,93 @@ export function ClientTable({
               </SortButton>
             </TableHead>
             <TableHead>Telefone</TableHead>
+            <TableHead>Tags</TableHead>
             <TableHead>
-              <SortButton column="city" onSort={onSort}>
-                Cidade
+              <SortButton column="totalAppointments" onSort={onSort}>
+                Agendamentos
               </SortButton>
             </TableHead>
-            <TableHead>
-              <SortButton column="createdAt" onSort={onSort}>
-                Criado em
-              </SortButton>
-            </TableHead>
-            <TableHead className="w-[100px]">Ações</TableHead>
+            <TableHead>Último Agendamento</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {clients.map((client) => (
             <TableRow key={client.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedIds.includes(client.id)}
+                  onCheckedChange={(checked) =>
+                    onSelectOne(client.id, checked as boolean)
+                  }
+                  aria-label={`Selecionar ${client.name}`}
+                />
+              </TableCell>
               <TableCell className="font-medium">
                 {client.name || '-'}
               </TableCell>
               <TableCell>{client.email}</TableCell>
               <TableCell>{client.phone || '-'}</TableCell>
               <TableCell>
-                {client.city
-                  ? `${client.city}${client.state ? `/${client.state}` : ''}`
+                {client.tags.length > 0 ? (
+                  <div className="flex gap-1 flex-wrap">
+                    {client.tags.slice(0, 2).map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant={tag === 'VIP' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                    {client.tags.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{client.tags.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">
+                  {client.totalAppointments || 0}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {client.lastAppointmentDate
+                  ? format(new Date(client.lastAppointmentDate), 'dd/MM/yyyy', {
+                      locale: ptBR,
+                    })
                   : '-'}
               </TableCell>
               <TableCell>
-                {format(new Date(client.createdAt), 'dd/MM/yyyy', {
-                  locale: ptBR,
-                })}
+                <Badge
+                  variant={client.isActive ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {client.isActive ? 'Ativo' : 'Inativo'}
+                </Badge>
               </TableCell>
               <TableCell>
-                <ClientActions
-                  client={client}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  isDeleting={deletingId === client.id}
-                />
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onViewDetails(client.id)}
+                    aria-label={`Ver detalhes de ${client.name}`}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <ClientActions
+                    client={client}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    isDeleting={deletingId === client.id}
+                  />
+                </div>
               </TableCell>
             </TableRow>
           ))}

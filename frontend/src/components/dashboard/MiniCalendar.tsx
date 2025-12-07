@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'; // ✅ Adicionar useCallback
+import { useState, useEffect, useCallback } from 'react'; 
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,6 +11,7 @@ interface CalendarDay {
 }
 
 export function MiniCalendar() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointmentDays, setAppointmentDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,6 @@ export function MiniCalendar() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // ✅ Usar useCallback para evitar warning
   const loadCalendarData = useCallback(async () => {
     setLoading(true);
     try {
@@ -28,11 +29,11 @@ export function MiniCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [month, year]); // ✅ Dependências corretas
+  }, [month, year]); 
 
   useEffect(() => {
     loadCalendarData();
-  }, [loadCalendarData]); // ✅ Agora está correto
+  }, [loadCalendarData]); 
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -75,6 +76,12 @@ export function MiniCalendar() {
     return apt?.count || 0;
   };
 
+  const handleDayClick = (day: number | null) => {
+  if (!day) return
+  const clickedDate = new Date(year, month, day)
+  const dateStr = clickedDate.toISOString().split('T')[0]
+  navigate(`/agendamentos?date=${dateStr}&view=calendar&dayModal=1`)
+}
   const previousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
   };
@@ -136,6 +143,7 @@ export function MiniCalendar() {
               return (
                 <div
                   key={index}
+                  onClick={() => handleDayClick(day)}
                   className={`
                     aspect-square flex items-center justify-center rounded-lg text-sm relative
                     transition-all duration-200
@@ -143,7 +151,7 @@ export function MiniCalendar() {
                     ${isTodayDay ? 'bg-primary/20 text-primary font-bold ring-2 ring-primary' : ''}
                     ${hasApt && !isTodayDay ? 'bg-primary/10' : ''}
                   `}
-                  title={hasApt ? `${aptCount} agendamento(s)` : undefined}
+                  title={hasApt ? `${aptCount} agendamento(s) - Clique para ver` : undefined}
                 >
                   {day && (
                     <>

@@ -24,15 +24,23 @@ import type {
 interface AppointmentCalendarProps {
   onAppointmentClick: (appointmentId: string) => void;
   onDayClick: (date: Date) => void;
+  initialDate?: Date;
 }
 
 export function AppointmentCalendar({
   onAppointmentClick,
   onDayClick,
+  initialDate,
 }: AppointmentCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(initialDate || new Date());
   const [appointments, setAppointments] = useState<CalendarAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (initialDate) {
+      setCurrentDate(initialDate);
+    }
+  }, [initialDate]);
 
   useEffect(() => {
     const fetchCalendarData = async () => {

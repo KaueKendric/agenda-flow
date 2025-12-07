@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { appointmentsApi } from '@/lib/appointments-api';
 import type { Appointment } from '@/types/appointment';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppointmentModalProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function AppointmentModal({
   services,
   clients,
 }: AppointmentModalProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
@@ -92,8 +94,9 @@ export function AppointmentModal({
     const fetchSlots = async () => {
       if (formData.professionalId && formData.serviceId && formData.date) {
         setLoadingSlots(true);
+        setAvailableSlots([]);
         try {
-          console.log('🔍 Fetching available slots...', {
+          console.log('🔍 Buscando horários disponíveis...', {
             professionalId: formData.professionalId,
             serviceId: formData.serviceId,
             date: format(formData.date, 'yyyy-MM-dd'),
@@ -105,10 +108,19 @@ export function AppointmentModal({
             date: format(formData.date, 'yyyy-MM-dd'),
           });
 
-          console.log('📥 Available slots response:', response);
+          console.log('📥 Slots disponíveis:', response.availableSlots);
           setAvailableSlots(response.availableSlots || []);
-        } catch (error) {
-          console.error('❌ Failed to fetch available slots:', error);
+        } catch (error: unknown) {
+          console.error('❌ Erro ao buscar horários:', error);
+          const message = error instanceof Error 
+            ? error.message 
+            : 'Não foi possível buscar os horários disponíveis.';
+          toast({
+            title: 'Erro',
+            description: message,
+            variant: 'destructive',
+          });
+
           setAvailableSlots([]);
         } finally {
           setLoadingSlots(false);
@@ -118,10 +130,15 @@ export function AppointmentModal({
       }
     };
     fetchSlots();
-  }, [formData.professionalId, formData.serviceId, formData.date]);
+  }, [formData.professionalId, formData.serviceId, formData.date, toast]);
 
   const handleSubmit = async () => {
     if (!formData.clientId || !formData.professionalId || !formData.serviceId || !formData.date || !formData.startTime) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -136,7 +153,7 @@ export function AppointmentModal({
         notes: formData.notes || undefined,
       };
 
-      console.log('💾 Saving appointment:', data);
+      console.log('💾 Salvando agendamento:', data);
 
       if (appointment) {
         await appointmentsApi.update(appointment.id, data);
@@ -144,10 +161,24 @@ export function AppointmentModal({
         await appointmentsApi.create(data);
       }
 
+      toast({
+        title: 'Sucesso!',
+        description: appointment ? 'Agendamento atualizado.' : 'Agendamento criado.',
+      });
+
       onSave();
       onOpenChange(false);
-    } catch (error) {
-      console.error('❌ Failed to save appointment:', error);
+    } catch (error: unknown) {
+  console.error('❌ Erro ao salvar:', error);
+  const message = error instanceof Error 
+    ? error.message 
+    : 'Não foi possível salvar o agendamento.';
+  toast({
+    title: 'Erro ao salvar',
+    description: message,
+    variant: 'destructive',
+  });
+
     } finally {
       setLoading(false);
     }
@@ -159,6 +190,14 @@ export function AppointmentModal({
       currency: 'BRL',
     }).format(parseFloat(price));
   };
+
+  const canSubmit = 
+    formData.clientId && 
+    formData.professionalId && 
+    formData.serviceId && 
+    formData.date && 
+    formData.startTime &&
+    availableSlots.includes(formData.startTime); // VALIDAÇÃO EXTRA
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -260,86 +299,96 @@ export function AppointmentModal({
               />
             )}
             {selectedService && (
-              <div className="text-sm text-muted-foreground">
-                Duração: {selectedService.duration} min | Preço: {formatPrice(selectedService.price)}
+              <div className="text-sm text-muted-foreground flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {selectedService.duration} min
+                </span>
+                <span>•</span>
+                <span>{formatPrice(selectedService.price)}</span>
               </div>
             )}
           </div>
 
-            {/* Date */}
-            <div className="grid gap-2">
-              <Label>Data *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !formData.date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date
-                      ? format(formData.date, 'dd/MM/yyyy', { locale: ptBR })
-                      : 'Selecione a data'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date: Date | undefined) => {
-                      if (date) {
-                        setFormData({ ...formData, date, startTime: '' });
-                      }
-                    }}
-                    disabled={(date) => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      return date < today;
-                    }}
-                    initialFocus
-                    locale={ptBR}
-                    showOutsideDays={false}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-
-
-
+          {/* Date */}
+          <div className="grid gap-2">
+            <Label>Data *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal',
+                    !formData.date && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.date
+                    ? format(formData.date, 'dd/MM/yyyy', { locale: ptBR })
+                    : 'Selecione a data'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.date}
+                  onSelect={(date: Date | undefined) => {
+                    if (date) {
+                      setFormData({ ...formData, date, startTime: '' });
+                    }
+                  }}
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date < today;
+                  }}
+                  initialFocus
+                  locale={ptBR}
+                  showOutsideDays={false}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {/* Time Slot */}
           <div className="grid gap-2">
             <Label htmlFor="time">Horário *</Label>
             {loadingSlots ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2 px-3 border rounded-md">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2 px-3 border rounded-md bg-muted/30">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Carregando horários disponíveis...
               </div>
             ) : availableSlots.length > 0 ? (
-              <Select
-                value={formData.startTime}
-                onValueChange={(value) => setFormData({ ...formData, startTime: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSlots.map((slot) => (
-                    <SelectItem key={slot} value={slot}>
-                      {slot}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select
+                  value={formData.startTime}
+                  onValueChange={(value) => setFormData({ ...formData, startTime: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((slot) => (
+                      <SelectItem key={slot} value={slot}>
+                        <span className="flex items-center gap-2">
+                          <Clock className="h-3 w-3" />
+                          {slot}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  ✅ {availableSlots.length} horário{availableSlots.length > 1 ? 's' : ''} disponível{availableSlots.length > 1 ? 'eis' : ''}
+                </p>
+              </>
             ) : formData.professionalId && formData.serviceId && formData.date ? (
-              <p className="text-sm text-muted-foreground py-2 px-3 border rounded-md bg-muted/50">
-                ⚠️ Nenhum horário disponível para esta data.
-              </p>
+              <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500 py-2 px-3 border border-amber-200 dark:border-amber-800 rounded-md bg-amber-50 dark:bg-amber-950/20">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>Nenhum horário disponível para esta data. Tente outra data ou profissional.</span>
+              </div>
             ) : (
-              <p className="text-sm text-muted-foreground py-2 px-3 border rounded-md">
+              <p className="text-sm text-muted-foreground py-2 px-3 border rounded-md bg-muted/30">
                 Selecione profissional, serviço e data para ver os horários disponíveis.
               </p>
             )}
@@ -364,7 +413,7 @@ export function AppointmentModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={loading || !formData.clientId || !formData.professionalId || !formData.serviceId || !formData.date || !formData.startTime}
+            disabled={loading || !canSubmit}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {appointment ? 'Salvar Alterações' : 'Criar Agendamento'}
