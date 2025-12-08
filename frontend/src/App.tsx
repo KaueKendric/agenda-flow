@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Debug from "./pages/Debug";
 import Appointments from "./pages/Appointments";
 import Clients from "./pages/Clients";
+import Professionals from "./pages/Professionals";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/agendamentos" element={<Appointments />} />
           <Route path="/clientes" element={<Clients />} />
+          <Route path="/profissionais" element={<Professionals />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

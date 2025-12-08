@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { ServicesService } from './services.service'
+import { createServiceSchema, updateServiceSchema } from './services.schemas'
 
 export class ServicesController {
   private service: ServicesService
@@ -10,7 +11,8 @@ export class ServicesController {
 
   async list(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const services = await this.service.list()
+      const { professionalId } = request.query as { professionalId?: string }
+      const services = await this.service.list(professionalId)
       return reply.status(200).send(services)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro ao listar serviços'
@@ -31,7 +33,7 @@ export class ServicesController {
 
   async create(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const data = request.body as Parameters<ServicesService['create']>[0]
+      const data = createServiceSchema.parse(request.body)
       const service = await this.service.create(data)
       return reply.status(201).send(service)
     } catch (error: unknown) {
@@ -43,7 +45,7 @@ export class ServicesController {
   async update(request: FastifyRequest, reply: FastifyReply) {
     try {
       const { id } = request.params as { id: string }
-      const data = request.body as Parameters<ServicesService['update']>[1]
+      const data = updateServiceSchema.parse(request.body)
       const service = await this.service.update(id, data)
       return reply.status(200).send(service)
     } catch (error: unknown) {
