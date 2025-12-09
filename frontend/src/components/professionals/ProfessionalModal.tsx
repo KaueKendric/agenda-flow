@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { professionalsApi } from '@/lib/professionals-api';
 import { ProfessionalFormTab } from './ProfessionalFormTab';
 import { ProfessionalServicesTab } from './ProfessionalServicesTab';
-import type { Professional } from '@/types/professional';
+import type { Professional } from '@/types/professionals';
 
 interface ProfessionalModalProps {
   open: boolean;

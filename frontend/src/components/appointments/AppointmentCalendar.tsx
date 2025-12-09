@@ -19,7 +19,7 @@ import { appointmentsApi } from '@/lib/appointments-api';
 import type {
   CalendarAppointment,
   AppointmentStatus,
-} from '@/types/appointment';
+} from '@/types/appointments';
 
 interface AppointmentCalendarProps {
   onAppointmentClick: (appointmentId: string) => void;

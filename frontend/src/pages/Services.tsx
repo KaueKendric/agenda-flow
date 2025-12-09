@@ -30,7 +30,7 @@ import { authService } from '@/lib/api';
 import { servicesApi } from '@/lib/services-api';
 import { ServicesList } from '@/components/services/ServicesList';
 import { ServiceModal } from '@/components/services/ServiceModal';
-import type { Service } from '@/types/service';
+import type { Service } from '@/types/services';
 
 export default function Services() {
   const navigate = useNavigate();

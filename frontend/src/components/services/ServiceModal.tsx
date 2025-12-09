@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { servicesApi } from '@/lib/services-api';
-import type { Service } from '@/types/service';
+import type { Service } from '@/types/services';
 
 interface ServiceModalProps {
   open: boolean;

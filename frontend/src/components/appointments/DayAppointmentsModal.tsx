@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { appointmentsApi } from '@/lib/appointments-api'
-import type { Appointment, AppointmentStatus } from '@/types/appointment'
+import type { Appointment, AppointmentStatus } from '@/types/appointments'
 
 interface DayAppointmentsModalProps {
   open: boolean

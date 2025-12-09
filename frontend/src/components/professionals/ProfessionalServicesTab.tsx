@@ -26,7 +26,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { professionalsApi, servicesApi } from '@/lib/professionals-api';
-import type { Professional, ProfessionalService } from '@/types/professional';
+import type { Professional, ProfessionalService } from '@/types/professionals';
 
 interface ProfessionalServicesTabProps {
   professional: Professional | null;

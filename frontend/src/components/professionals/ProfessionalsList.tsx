@@ -1,7 +1,7 @@
 import { Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProfessionalCard } from './ProfessionalCard';
-import type { Professional } from '@/types/professional';
+import type { Professional } from '@/types/professionals';
 
 interface ProfessionalsListProps {
   professionals: Professional[];

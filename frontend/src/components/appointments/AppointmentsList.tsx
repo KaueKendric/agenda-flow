@@ -20,8 +20,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import type { Appointment, Pagination as PaginationType } from '@/types/appointment';
-import { STATUS_LABELS, STATUS_COLORS } from '@/types/appointment';
+import type { Appointment, Pagination as PaginationType } from '@/types/appointments';
+import { STATUS_LABELS, STATUS_COLORS } from '@/types/appointments';
 
 interface AppointmentsListProps {
   appointments: Appointment[];

@@ -5,7 +5,7 @@ import type {
   UpdateProfessionalInput,
   CreateUserInput,
   ProfessionalService 
-} from '@/types/professional';
+} from '@/types/professionals';
 
 export const professionalsApi = {
   async list(): Promise<Professional[]> {

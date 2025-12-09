@@ -4,7 +4,7 @@ import type {
   Appointment, 
   AppointmentStatus,
   AvailableSlotsResponse 
-} from '@/types/appointment';
+} from '@/types/appointments';
 
 export const appointmentsApi = {  
   async list(params?: {

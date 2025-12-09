@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Service, CreateServiceInput, UpdateServiceInput } from '@/types/service';
+import type { Service, CreateServiceInput, UpdateServiceInput } from '@/types/services';
 
 export const servicesApi = {
   async list(professionalId?: string): Promise<Service[]> {

@@ -20,7 +20,7 @@ import { authService } from '@/lib/api';
 import { professionalsApi } from '@/lib/professionals-api';
 import { ProfessionalsList } from '@/components/professionals/ProfessionalsList';
 import { ProfessionalModal } from '@/components/professionals/ProfessionalModal';
-import { SPECIALTIES, type Professional } from '@/types/professional';
+import { SPECIALTIES, type Professional } from '@/types/professionals';
 
 export default function Professionals() {
   const navigate = useNavigate();

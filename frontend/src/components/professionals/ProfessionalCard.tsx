@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import type { Professional } from '@/types/professional';
+import type { Professional } from '@/types/professionals';
 
 interface ProfessionalCardProps {
   professional: Professional;

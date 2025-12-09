@@ -19,8 +19,8 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { AppointmentStatus } from '@/types/appointment';
-import { STATUS_LABELS } from '@/types/appointment';
+import type { AppointmentStatus } from '@/types/appointments';
+import { STATUS_LABELS } from '@/types/appointments';
 
 interface AppointmentFiltersProps {
   filters: {

@@ -20,7 +20,7 @@ import { AppointmentModal } from '@/components/appointments/AppointmentModal'
 import { AppointmentDetailsModal } from '@/components/appointments/AppointmentDetailsModal'
 import { AppointmentCalendar } from '@/components/appointments/AppointmentCalendar'
 import { DayAppointmentsModal } from '@/components/appointments/DayAppointmentsModal'
-import type { Appointment, AppointmentStatus, Pagination } from '@/types/appointment'
+import type { Appointment, AppointmentStatus, Pagination } from '@/types/appointments'
 
 export default function Appointments() {
   const navigate = useNavigate()

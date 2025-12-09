@@ -2,7 +2,7 @@ import { Clock, DollarSign, Edit, Trash2, User } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { Service } from '@/types/service';
+import type { Service } from '@/types/services';
 
 interface ServiceCardProps {
   service: Service;

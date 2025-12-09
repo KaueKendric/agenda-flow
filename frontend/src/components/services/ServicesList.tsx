@@ -1,6 +1,6 @@
 import { Loader2, Package } from 'lucide-react';
 import { ServiceCard } from './ServiceCard';
-import type { Service } from '@/types/service';
+import type { Service } from '@/types/services';
 
 interface ServicesListProps {
   services: Service[];

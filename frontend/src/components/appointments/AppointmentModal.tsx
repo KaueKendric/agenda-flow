@@ -28,7 +28,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { appointmentsApi } from '@/lib/appointments-api';
-import type { Appointment } from '@/types/appointment';
+import type { Appointment } from '@/types/appointments';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppointmentModalProps {

@@ -36,8 +36,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { appointmentsApi } from '@/lib/appointments-api';
-import type { Appointment, AppointmentStatus } from '@/types/appointment';
-import { STATUS_LABELS, STATUS_COLORS } from '@/types/appointment';
+import type { Appointment, AppointmentStatus } from '@/types/appointments';
+import { STATUS_LABELS, STATUS_COLORS } from '@/types/appointments';
 
 interface AppointmentDetailsModalProps {
   open: boolean;

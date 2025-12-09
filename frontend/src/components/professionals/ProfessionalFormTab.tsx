@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { SPECIALTIES } from '@/types/professional';
+import { SPECIALTIES } from '@/types/professionals';
 
 interface ProfessionalFormData {
   name: string;
