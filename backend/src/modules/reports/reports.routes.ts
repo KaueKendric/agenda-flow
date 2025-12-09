@@ -99,7 +99,7 @@ export async function reportsRoutes(app: FastifyInstance) {
         endDate: new Date(request.query.endDate),
       }
 
-      const report = await reportsService.getProfessionalsReport(filters)a
+      const report = await reportsService.getProfessionalsReport(filters)
       return reply.send(report)
     }
   )
