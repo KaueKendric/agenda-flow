@@ -11,6 +11,7 @@ import Debug from "./pages/Debug";
 import Appointments from "./pages/Appointments";
 import Clients from "./pages/Clients";
 import Professionals from "./pages/Professionals";
+import Services from "./pages/Services";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/agendamentos" element={<Appointments />} />
           <Route path="/clientes" element={<Clients />} />
           <Route path="/profissionais" element={<Professionals />} />
+          <Route path="/servicos" element={<Services />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

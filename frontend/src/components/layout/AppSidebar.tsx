@@ -1,5 +1,6 @@
-import { Home, Calendar, Users, UserCheck, BarChart3, Settings } from 'lucide-react';
+import { Home, Calendar, Users, UserCheck, Briefcase, BarChart3, Settings } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { authService } from '@/lib/api';
 import {
   Sidebar,
   SidebarContent,
@@ -13,15 +14,58 @@ import {
 } from '@/components/ui/sidebar';
 
 const navItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: Home },
-  { title: 'Agendamentos', url: '/agendamentos', icon: Calendar },
-  { title: 'Clientes', url: '/clientes', icon: Users },
-  { title: 'Profissionais', url: '/profissionais', icon: UserCheck },
-  { title: 'Relatórios', url: '/relatorios', icon: BarChart3 },
-  { title: 'Configurações', url: '/configuracoes', icon: Settings },
+  { 
+    title: 'Dashboard', 
+    url: '/dashboard', 
+    icon: Home,
+    roles: ['ADMIN', 'PROFESSIONAL']
+  },
+  { 
+    title: 'Agendamentos', 
+    url: '/agendamentos', 
+    icon: Calendar,
+    roles: ['ADMIN', 'PROFESSIONAL']
+  },
+  { 
+    title: 'Clientes', 
+    url: '/clientes', 
+    icon: Users,
+    roles: ['ADMIN', 'PROFESSIONAL']
+  },
+  { 
+    title: 'Profissionais', 
+    url: '/profissionais', 
+    icon: UserCheck,
+    roles: ['ADMIN']
+  },
+  { 
+    title: 'Serviços', 
+    url: '/servicos', 
+    icon: Briefcase,
+    roles: ['ADMIN', 'PROFESSIONAL']
+  },
+  { 
+    title: 'Relatórios', 
+    url: '/relatorios', 
+    icon: BarChart3,
+    roles: ['ADMIN', 'PROFESSIONAL']
+  },
+  { 
+    title: 'Configurações', 
+    url: '/configuracoes', 
+    icon: Settings,
+    roles: ['ADMIN', 'PROFESSIONAL']
+  },
 ];
 
 export function AppSidebar() {
+  const user = authService.getStoredUser();
+  const userRole = user?.role || 'CLIENT';
+
+  const visibleItems = navItems.filter(item => 
+    item.roles.includes(userRole)
+  );
+
   return (
     <Sidebar className="border-r border-border/50">
       <SidebarHeader className="p-6">
@@ -37,7 +81,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
