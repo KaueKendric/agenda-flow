@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { Plus, List, CalendarDays } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { SidebarProvider } from '@/components/ui/sidebar'
@@ -22,6 +22,11 @@ import { AppointmentCalendar } from '@/components/appointments/AppointmentCalend
 import { DayAppointmentsModal } from '@/components/appointments/DayAppointmentsModal'
 import type { Appointment, AppointmentStatus, Pagination } from '@/types/appointments'
 
+interface Client {
+  id: string
+  name: string
+}
+
 export default function Appointments() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -37,9 +42,9 @@ export default function Appointments() {
     totalPages: 0,
   })
 
-  const [professionals, setProfessionals] = useState<{ id: string; name: string }[]>([])
-  const [services, setServices] = useState<{ id: string; name: string; duration: number; price: string }[]>([])
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([])
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const [clients, setClients] = useState<Client[]>([])
   const [loadingData, setLoadingData] = useState(true)
 
   const [filters, setFilters] = useState({
@@ -56,9 +61,33 @@ export default function Appointments() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<string>('list')
 
-  // Novo: modal de agendamentos do dia
   const [dayModalOpen, setDayModalOpen] = useState(false)
   const [dayModalDate, setDayModalDate] = useState<Date | null>(null)
+
+  // ✅ LER URL PARAMS E ABRIR MODAL AUTOMATICAMENTE
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    const viewParam = searchParams.get('view')
+    const dayModalParam = searchParams.get('dayModal')
+
+    if (dateParam && dayModalParam === '1') {
+      try {
+        const parsedDate = parseISO(dateParam)
+        setDayModalDate(parsedDate)
+        setDayModalOpen(true)
+
+        if (viewParam) {
+          setActiveTab(viewParam)
+        }
+
+        // Limpar params depois de processar
+        searchParams.delete('dayModal')
+        setSearchParams(searchParams)
+      } catch (error) {
+        console.error('❌ Erro ao parsear data da URL:', error)
+      }
+    }
+  }, [searchParams, setSearchParams])
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -66,34 +95,6 @@ export default function Appointments() {
     }
   }, [navigate])
 
-  // Ler parâmetros da URL (date, view, dayModal)
-  useEffect(() => {
-    const dateParam = searchParams.get('date')
-    const viewParam = searchParams.get('view')
-    const dayModalParam = searchParams.get('dayModal')
-
-    if (dateParam) {
-      const date = new Date(dateParam + 'T12:00:00')
-      setFilters((prev) => ({ ...prev, date }))
-      setDayModalDate(date)
-      searchParams.delete('date')
-    }
-
-    if (viewParam === 'calendar') {
-      setActiveTab('calendar')
-      searchParams.delete('view')
-    }
-
-    if (dayModalParam === '1') {
-      setDayModalOpen(true)
-      searchParams.delete('dayModal')
-    }
-
-    setSearchParams(searchParams)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Metadados
   useEffect(() => {
     const fetchMetadata = async () => {
       setLoadingData(true)
@@ -104,22 +105,10 @@ export default function Appointments() {
           clientsApi.listSimple(),
         ])
 
-        setProfessionals(
-          profsData.map((p: Professional) => ({
-            id: p.id,
-            name: p.user?.name || p.name || 'Sem nome',
-          }))
-        )
-        setServices(
-          servicesData.map((s: Service) => ({
-            id: s.id,
-            name: s.name,
-            duration: s.duration,
-            price: s.price.toString(),
-          }))
-        )
+        setProfessionals(profsData)
+        setServices(servicesData)
         setClients(
-          clientsData.map((c) => ({
+          clientsData.map((c: Client) => ({
             id: c.id,
             name: c.name || 'Sem nome',
           }))
@@ -139,25 +128,35 @@ export default function Appointments() {
     fetchMetadata()
   }, [toast])
 
-  // Agendamentos
   const fetchAppointments = useCallback(async () => {
     setLoading(true)
     try {
       const params: Record<string, string | number | string[] | undefined> = {
         page: pagination.page,
         limit: pagination.limit,
-        professionalId: filters.professionalId || undefined,
-        serviceId: filters.serviceId || undefined,
-        date: filters.date ? format(filters.date, 'yyyy-MM-dd') : undefined,
-        search: filters.search || undefined,
       }
-      if (filters.status.length > 0) params.status = filters.status
+
+      if (filters.status.length > 0) {
+        params.status = filters.status
+      }
+      if (filters.professionalId) {
+        params.professionalId = filters.professionalId
+      }
+      if (filters.serviceId) {
+        params.serviceId = filters.serviceId
+      }
+      if (filters.date) {
+        params.date = format(filters.date, 'yyyy-MM-dd')
+      }
+      if (filters.search) {
+        params.search = filters.search
+      }
+
+      console.log('📡 Chamando API com params:', params)
 
       const response = await appointmentsApi.list(params)
       setAppointments(response.appointments || [])
-      setPagination(
-        response.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 }
-      )
+      setPagination(response.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 })
     } catch (error) {
       console.error('❌ Failed to fetch appointments:', error)
       toast({
@@ -262,7 +261,6 @@ export default function Appointments() {
     }
   }
 
-  // Agora clicar em um dia abre o modal do dia (não cria novo agendamento)
   const handleCalendarDayClick = (date: Date) => {
     setFilters((prev: typeof filters) => ({ ...prev, date }))
     setDayModalDate(date)
@@ -312,8 +310,16 @@ export default function Appointments() {
                     <AppointmentFilters
                       filters={filters}
                       onFiltersChange={handleFiltersChange}
-                      professionals={professionals}
-                      services={services}
+                      professionals={professionals.map((p) => ({
+                        id: p.id,
+                        name: p.user?.name || 'Sem nome',
+                      }))}
+                      services={services.map((s) => ({
+                        id: s.id,
+                        name: s.name,
+                        duration: s.duration,
+                        price: s.price.toString(),
+                      }))}
                     />
                   </div>
 
@@ -349,8 +355,16 @@ export default function Appointments() {
         }}
         appointment={editingAppointment}
         onSave={handleSave}
-        professionals={professionals}
-        services={services}
+        professionals={professionals.map((p) => ({
+          id: p.id,
+          name: p.user?.name || 'Sem nome',
+        }))}
+        services={services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          duration: s.duration,
+          price: s.price.toString(),
+        }))}
         clients={clients}
       />
 

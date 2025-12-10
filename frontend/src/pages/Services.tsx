@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, X } from 'lucide-react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/layout/AppSidebar';
-import { DashboardHeader } from '@/components/layout/DashboardHeader';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Search, Filter, X } from 'lucide-react'
+import { SidebarProvider } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/layout/AppSidebar'
+import { DashboardHeader } from '@/components/layout/DashboardHeader'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,60 +24,60 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/lib/api';
-import { servicesApi } from '@/lib/services-api';
-import { ServicesList } from '@/components/services/ServicesList';
-import { ServiceModal } from '@/components/services/ServiceModal';
-import type { Service } from '@/types/services';
+} from '@/components/ui/alert-dialog'
+import { useToast } from '@/hooks/use-toast'
+import { authService } from '@/lib/api'
+import { servicesApi } from '@/lib/services-api'
+import { ServicesList } from '@/components/services/ServicesList'
+import { ServiceModal } from '@/components/services/ServiceModal'
+import type { Service } from '@/types/services'
 
 export default function Services() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [user, setUser] = useState<{ name?: string; email: string; role: string } | null>(null);
-  
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'global' | 'linked'>('all');
-  
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const [user, setUser] = useState<{ name?: string; email: string; role: string } | null>(null)
 
-  const isAdmin = user?.role === 'ADMIN';
+  const [services, setServices] = useState<Service[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterType, setFilterType] = useState<'all' | 'global' | 'linked'>('all')
+
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
+
+  const isAdmin = user?.role === 'ADMIN'
 
   const loadServices = useCallback(async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const data = await servicesApi.list();
-      setServices(data);
+      const data = await servicesApi.list()
+      setServices(data)
     } catch (error) {
-      console.error('Error loading services:', error);
+      console.error('Error loading services:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os serviços',
         variant: 'destructive',
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [toast]);
+  }, [toast])
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
-      navigate('/auth');
-      return;
+      navigate('/auth')
+      return
     }
-    const currentUser = authService.getStoredUser();
-    setUser(currentUser);
-    loadServices();
-  }, [navigate, loadServices]);
+    const currentUser = authService.getStoredUser()
+    setUser(currentUser)
+    loadServices()
+  }, [navigate, loadServices])
 
   const handleEdit = (service: Service) => {
     if (!isAdmin) {
@@ -85,12 +85,12 @@ export default function Services() {
         title: 'Sem permissão',
         description: 'Apenas administradores podem editar serviços',
         variant: 'destructive',
-      });
-      return;
+      })
+      return
     }
-    setSelectedService(service);
-    setModalOpen(true);
-  };
+    setSelectedService(service)
+    setModalOpen(true)
+  }
 
   const handleDeleteClick = (service: Service) => {
     if (!isAdmin) {
@@ -98,80 +98,82 @@ export default function Services() {
         title: 'Sem permissão',
         description: 'Apenas administradores podem excluir serviços',
         variant: 'destructive',
-      });
-      return;
+      })
+      return
     }
-    setServiceToDelete(service);
-    setDeleteDialogOpen(true);
-  };
+    setServiceToDelete(service)
+    setDeleteDialogOpen(true)
+  }
 
   const confirmDelete = async () => {
-    if (!serviceToDelete) return;
+    if (!serviceToDelete) return
 
-    setDeletingId(serviceToDelete.id);
+    setDeletingId(serviceToDelete.id)
     try {
-      await servicesApi.delete(serviceToDelete.id);
+      await servicesApi.delete(serviceToDelete.id)
       toast({
         title: 'Sucesso',
         description: 'Serviço excluído com sucesso',
-      });
-      loadServices();
+      })
+      loadServices()
     } catch (error: unknown) {
-      const message = error instanceof Error 
-        ? error.message 
-        : 'Não foi possível excluir o serviço';
+      const message = error instanceof Error ? error.message : 'Não foi possível excluir o serviço'
       toast({
         title: 'Erro',
         description: message,
         variant: 'destructive',
-      });
+      })
     } finally {
-      setDeletingId(null);
-      setDeleteDialogOpen(false);
-      setServiceToDelete(null);
+      setDeletingId(null)
+      setDeleteDialogOpen(false)
+      setServiceToDelete(null)
     }
-  };
+  }
 
   const handleModalSuccess = () => {
-    loadServices();
-  };
+    loadServices()
+  }
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setFilterType('all');
-  };
+    setSearchTerm('')
+    setFilterType('all')
+  }
 
   const filteredServices = useMemo(() => {
-    return services.filter(service => {
-      const matchesSearch = !searchTerm || 
+    return services.filter((service) => {
+      const matchesSearch =
+        !searchTerm ||
         service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        service.description?.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesType = 
+      const matchesType =
         filterType === 'all' ||
         (filterType === 'global' && !service.professionalId) ||
-        (filterType === 'linked' && !!service.professionalId);
+        (filterType === 'linked' && !!service.professionalId)
 
-      return matchesSearch && matchesType;
-    });
-  }, [services, searchTerm, filterType]);
+      return matchesSearch && matchesType
+    })
+  }, [services, searchTerm, filterType])
 
-  const hasActiveFilters = searchTerm || filterType !== 'all';
+  const hasActiveFilters = searchTerm || filterType !== 'all'
 
-  const stats = useMemo(() => ({
-    total: services.length,
-    global: services.filter(s => !s.professionalId).length,
-    linked: services.filter(s => !!s.professionalId).length,
-  }), [services]);
+  const stats = useMemo(
+    () => ({
+      total: services.length,
+      global: services.filter((s) => !s.professionalId).length,
+      linked: services.filter((s) => !!s.professionalId).length,
+    }),
+    [services]
+  )
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        
+
         <div className="flex-1 flex flex-col">
           <DashboardHeader user={user} />
-          
+
           <main className="flex-1 p-6">
             <div className="max-w-7xl mx-auto space-y-6">
               {/* Header */}
@@ -179,16 +181,18 @@ export default function Services() {
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Serviços</h1>
                   <p className="text-muted-foreground">
-                    {isAdmin 
+                    {isAdmin
                       ? 'Gerencie os serviços oferecidos pelo estabelecimento'
                       : 'Visualize os serviços disponíveis'}
                   </p>
                 </div>
                 {isAdmin && (
-                  <Button onClick={() => {
-                    setSelectedService(null);
-                    setModalOpen(true);
-                  }}>
+                  <Button
+                    onClick={() => {
+                      setSelectedService(null)
+                      setModalOpen(true)
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Serviço
                   </Button>
@@ -260,12 +264,7 @@ export default function Services() {
                 </DropdownMenu>
 
                 {hasActiveFilters && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={clearFilters}
-                    className="text-muted-foreground"
-                  >
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
                     <X className="h-4 w-4 mr-1" />
                     Limpar filtros
                   </Button>
@@ -275,7 +274,8 @@ export default function Services() {
               {/* Results count */}
               {!isLoading && (
                 <p className="text-sm text-muted-foreground">
-                  {filteredServices.length} serviço{filteredServices.length !== 1 ? 's' : ''} encontrado{filteredServices.length !== 1 ? 's' : ''}
+                  {filteredServices.length} serviço{filteredServices.length !== 1 ? 's' : ''} encontrado
+                  {filteredServices.length !== 1 ? 's' : ''}
                 </p>
               )}
 
@@ -322,5 +322,5 @@ export default function Services() {
         </AlertDialogContent>
       </AlertDialog>
     </SidebarProvider>
-  );
+  )
 }

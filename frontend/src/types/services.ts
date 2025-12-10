@@ -1,38 +1,53 @@
 export interface Service {
-  id: string;
-  name: string;
-  description?: string;
-  duration: number;
-  price: number;
-  professionalId?: string;
+  id: string
+  name: string
+  description?: string
+  duration: number
+  price: number
+  professionalId?: string
   professional?: {
-    id: string;
+    id: string
     user: {
-      name: string;
-      email: string;
-    };
-  };
-  createdAt: string;
-  updatedAt: string;
+      name: string
+      email: string
+    }
+  }
+  category?: string
+  isActive?: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CreateServiceInput {
-  name: string;
-  description?: string;
-  duration: number;
-  price: number;
-  professionalId?: string | null;
+  name: string
+  description?: string
+  duration: number
+  price: number
+  professionalId?: string | null
+  category?: string
 }
 
 export interface UpdateServiceInput {
-  name?: string;
-  description?: string;
-  duration?: number;
-  price?: number;
-  professionalId?: string | null;
+  name?: string
+  description?: string
+  duration?: number
+  price?: number
+  professionalId?: string | null
+  category?: string
+  isActive?: boolean
 }
 
-// Categorias sugeridas 
+export interface ServicesListResponse {
+  services: Service[]
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// Categorias sugeridas
 export const SERVICE_CATEGORIES = [
   'Corte',
   'Coloração',
@@ -47,4 +62,4 @@ export const SERVICE_CATEGORIES = [
   'Design de Sobrancelhas',
   'Massagem',
   'Outro',
-] as const;
+] as const

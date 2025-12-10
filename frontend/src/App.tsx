@@ -13,6 +13,7 @@ import Clients from "./pages/Clients";
 import Professionals from "./pages/Professionals";
 import Services from "./pages/Services";
 import Reports from './pages/Reports'
+import Settings from './pages/Settings'
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/profissionais" element={<Professionals />} />
           <Route path="/servicos" element={<Services />} />
           <Route path="/relatorios" element={<Reports />} />
+          <Route path="/configuracoes" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
