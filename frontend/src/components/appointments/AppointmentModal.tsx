@@ -379,7 +379,7 @@ export function AppointmentModal({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  ✅ {availableSlots.length} horário{availableSlots.length > 1 ? 's' : ''} disponível{availableSlots.length > 1 ? 'eis' : ''}
+                {availableSlots.length} horário{availableSlots.length !== 1 ? 's' : ''} disponíve{availableSlots.length !== 1 ? 'is' : 'l'} ✅
                 </p>
               </>
             ) : formData.professionalId && formData.serviceId && formData.date ? (
