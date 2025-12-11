@@ -23,19 +23,40 @@ import { professionalsRoutes } from './modules/professionals/professionals.route
 import { reportsRoutes } from '@/modules/reports/reports.routes'
 import { usersRoutes } from './modules/users/user.routes'
 
-// ✅ Validação de variáveis obrigatórias
+interface FastifyError extends Error {
+  validation?: unknown[]
+  statusCode?: number
+}
+
+function isFastifyError(error: unknown): error is FastifyError {
+  return error instanceof Error
+}
+
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET não está definido no arquivo .env')
 }
 
-// ✅ Configurações do ambiente
 const PORT = Number(process.env.PORT) || 3333
 const HOST = process.env.HOST || '0.0.0.0'
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
 const app = fastify({
-  logger: true, 
+  logger: NODE_ENV === 'production' 
+    ? {
+        level: 'info',
+        transport: undefined,
+      }
+    : {
+        level: 'debug',
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+          },
+        },
+      },
 }).withTypeProvider<ZodTypeProvider>()
 
 app.setValidatorCompiler(validatorCompiler)
@@ -44,43 +65,55 @@ app.setSerializerCompiler(serializerCompiler)
 app.register(fastifyCors, {
   origin: NODE_ENV === 'development' 
     ? true 
-    : FRONTEND_URL, 
+    : [FRONTEND_URL, /\.vercel\.app$/],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
 })
 
 app.register(fastifyJwt, {
   secret: process.env.JWT_SECRET,
 })
 
-// ✅ ADICIONAR SUPORTE A MULTIPART (upload de arquivos)
+// Multipart
 app.register(fastifyMultipart, {
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
   },
 })
 
-// ✅ ADICIONAR SUPORTE A ARQUIVOS ESTÁTICOS
 app.register(fastifyStatic, {
   root: path.join(process.cwd(), 'public'),
   prefix: '/',
+  constraints: {},
 })
 
 app.decorate('prisma', prisma)
 
+//  Swagger/OpenAPI
 app.register(fastifySwagger, {
   openapi: {
     info: {
       title: 'AgendaFlow API',
-      description: 'API for AgendaFlow - Sistema de Agendamentos',
+      description: 'API completa para sistema de agendamentos - AgendaFlow',
       version: '1.0.0',
     },
+    servers: [
+      {
+        url: NODE_ENV === 'production' 
+          ? 'https://agendaflow-production.up.railway.app' 
+          : `http://localhost:${PORT}`,
+        description: NODE_ENV === 'production' ? 'Production' : 'Development',
+      },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
+          description: 'Insira o token JWT obtido no login',
         },
       },
     },
@@ -88,26 +121,72 @@ app.register(fastifySwagger, {
   transform: jsonSchemaTransform,
 })
 
+//  Documentação com Scalar
 app.register(ScalarApiReference, {
   routePrefix: '/docs',
+  configuration: {
+    theme: 'purple',
+  },
 })
 
-// ✅ Middleware para logar todas as requisições
-app.addHook('onRequest', async (request, reply) => {
-  console.log(`\n📨 [${new Date().toISOString()}]`)
-  console.log(`   ${request.method} ${request.url}`)
-  console.log(`   Headers:`, {
-    authorization: request.headers.authorization ? '***token***' : 'none',
-    contentType: request.headers['content-type'],
+//  Hook de logging de requisições
+if (NODE_ENV === 'development') {
+  app.addHook('onRequest', async (request, reply) => {
+    console.log(`\n📨 [${new Date().toISOString()}]`)
+    console.log(`   ${request.method} ${request.url}`)
+    console.log(`   Headers:`, {
+      authorization: request.headers.authorization ? '***token***' : 'none',
+      contentType: request.headers['content-type'],
+    })
+  })
+
+  app.addHook('onResponse', async (request, reply) => {
+    console.log(`   ✓ Status: ${reply.statusCode}`)
+  })
+}
+
+app.setErrorHandler((error: unknown, request, reply) => {
+ 
+  if (!isFastifyError(error)) {
+    return reply.status(500).send({
+      statusCode: 500,
+      error: 'Internal Server Error',
+      message: 'Erro interno do servidor',
+    })
+  }
+
+  // Log do erro
+  request.log.error(error)
+
+  if (error.validation) {
+    return reply.status(400).send({
+      statusCode: 400,
+      error: 'Validation Error',
+      message: 'Dados de entrada inválidos',
+      details: error.validation,
+    })
+  }
+
+  if (error.statusCode === 401) {
+    return reply.status(401).send({
+      statusCode: 401,
+      error: 'Unauthorized',
+      message: 'Token inválido ou expirado',
+    })
+  }
+
+  const statusCode = error.statusCode || 500
+  
+  reply.status(statusCode).send({
+    statusCode,
+    error: error.name || 'Internal Server Error',
+    message: NODE_ENV === 'production' 
+      ? 'Erro interno do servidor' 
+      : error.message,
   })
 })
 
-// ✅ Middleware para logar respostas
-app.addHook('onResponse', async (request, reply) => {
-  console.log(`   ✓ Status: ${reply.statusCode}`)
-})
-
-// Rotas
+// Registrar rotas
 app.register(authRoutes, { prefix: '/api/auth' })
 app.register(dashboardRoutes, { prefix: '/api/dashboard' })
 app.register(appointmentsRoutes, { prefix: '/api/appointments' })
@@ -118,25 +197,82 @@ app.register(professionalsRoutes, { prefix: '/api/professionals' })
 app.register(reportsRoutes, { prefix: '/api/reports' })
 app.register(usersRoutes, { prefix: '/api/users' })
 
-// Health check
+//  Health check
 app.get('/health', async () => {
-  return { 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    environment: NODE_ENV,
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    
+    return { 
+      status: 'ok',
+      service: 'AgendaFlow API',
+      timestamp: new Date().toISOString(),
+      environment: NODE_ENV,
+      uptime: process.uptime(),
+      database: 'connected',
+    }
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    
+    return { 
+      status: 'error',
+      service: 'AgendaFlow API',
+      timestamp: new Date().toISOString(),
+      environment: NODE_ENV,
+      database: 'disconnected',
+      error: errorMessage,
+    }
   }
 })
 
-// ✅ Inicializar servidor
-app.listen({ port: PORT, host: HOST }).then(() => {
-  console.log(`\n${'='.repeat(60)}`)
-  console.log(`🚀 HTTP Server Running on http://${HOST}:${PORT}`)
-  console.log(`📚 Docs available at http://${HOST}:${PORT}/docs`)
-  console.log(`📁 Static files at ${path.join(process.cwd(), 'public')}`)
-  console.log(`🌍 Environment: ${NODE_ENV}`)
-  console.log(`🔗 Frontend URL: ${FRONTEND_URL}`)
-  console.log(`${'='.repeat(60)}\n`)
-}).catch(err => {
-  console.error('❌ Erro ao iniciar servidor:', err)
-  process.exit(1)
+// Rota raiz
+app.get('/', async () => {
+  return {
+    message: '🚀 AgendaFlow API',
+    version: '1.0.0',
+    docs: `${NODE_ENV === 'production' ? 'https://agendaflow-production.up.railway.app' : `http://localhost:${PORT}`}/docs`,
+    health: '/health',
+  }
 })
+
+const gracefulShutdown = async () => {
+  console.log('\n Iniciando shutdown...')
+  
+  try {
+    await app.close()
+    await prisma.$disconnect()
+    console.log('✅ Servidor encerrado com sucesso')
+    process.exit(0)
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    console.error('❌ Erro no shutdown:', errorMessage)
+    process.exit(1)
+  }
+}
+
+process.on('SIGTERM', gracefulShutdown)
+process.on('SIGINT', gracefulShutdown)
+
+//  Inicializar servidor
+const start = async () => {
+  try {
+    await app.listen({ port: PORT, host: HOST })
+    
+    console.log(`\n${'='.repeat(60)}`)
+    console.log(`🚀 AgendaFlow API Server Running`)
+    console.log(`${'='.repeat(60)}`)
+    console.log(`📍 Address: http://${HOST}:${PORT}`)
+    console.log(`📚 Docs: http://${HOST}:${PORT}/docs`)
+    console.log(`💚 Health: http://${HOST}:${PORT}/health`)
+    console.log(`📁 Static: ${path.join(process.cwd(), 'public')}`)
+    console.log(`🌍 Environment: ${NODE_ENV}`)
+    console.log(`🔗 Frontend: ${FRONTEND_URL}`)
+    console.log(`🗄️  Database: Connected`)
+    console.log(`${'='.repeat(60)}\n`)
+  } catch (err: unknown) {
+    console.error('❌ Erro ao iniciar servidor:', err)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+}
+
+start()
