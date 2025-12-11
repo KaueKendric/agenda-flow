@@ -6,7 +6,7 @@
     "lib": ["ES2022", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
     "moduleResolution": "NodeNext",
     "outDir": "./dist",
-     "baseUrl": "./src",
+     "baseUrl": "./",
     "rootDir": "./src",
     
     "strict": true,
