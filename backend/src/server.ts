@@ -19,7 +19,7 @@ import { appointmentsRoutes } from './modules/appointments/appointments.routes'
 import { servicesRoutes } from './modules/services/services.routes'
 import { clientsRoutes } from './modules/clients/clients.routes'
 import { professionalsRoutes } from './modules/professionals/professionals.routes'
-import { reportsRoutes } from '@/modules/reports/reports.routes'
+import { reportsRoutes } from './modules/reports/reports.routes'
 import { usersRoutes } from './modules/users/user.routes'
 
 interface FastifyError extends Error {
