@@ -1,4 +1,4 @@
-import ScalarApiReference from '@scalar/fastify-api-reference'
+import fastifySwaggerUi from '@fastify/swagger-ui'
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
 import fastifySwagger from '@fastify/swagger'
@@ -90,7 +90,7 @@ app.register(fastifyStatic, {
 
 app.decorate('prisma', prisma)
 
-//  Swagger/OpenAPI
+// ✅ Swagger/OpenAPI
 app.register(fastifySwagger, {
   openapi: {
     info: {
@@ -101,7 +101,7 @@ app.register(fastifySwagger, {
     servers: [
       {
         url: NODE_ENV === 'production' 
-          ? 'https://agendaflow-production.up.railway.app' 
+          ? 'https://backend-production-b85c.up.railway.app' 
           : `http://localhost:${PORT}`,
         description: NODE_ENV === 'production' ? 'Production' : 'Development',
       },
@@ -120,11 +120,21 @@ app.register(fastifySwagger, {
   transform: jsonSchemaTransform,
 })
 
-//  Documentação com Scalar
-app.register(ScalarApiReference, {
+// ✅ Documentação com Swagger UI (NOVO)
+app.register(fastifySwaggerUi, {
   routePrefix: '/docs',
-  configuration: {
-    theme: 'purple',
+  uiConfig: {
+    docExpansion: 'list',
+    deepLinking: false,
+    displayRequestDuration: true,
+  },
+  staticCSP: true,
+  transformStaticCSP: (header) => header,
+  transformSpecification: (swaggerObject, request, reply) => {
+    return swaggerObject
+  },
+  theme: {
+    title: 'AgendaFlow API - Documentação',
   },
 })
 
