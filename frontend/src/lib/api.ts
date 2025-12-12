@@ -27,7 +27,6 @@ api.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       
-      // Redirecionar para login apenas se não estiver na página de auth
       if (!window.location.pathname.includes('/auth')) {
         window.location.href = '/auth'
       }

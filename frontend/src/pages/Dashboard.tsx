@@ -82,7 +82,6 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  // ✅ Carregar dados na montagem do componente
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);

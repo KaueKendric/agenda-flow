@@ -64,7 +64,7 @@ export default function Appointments() {
   const [dayModalOpen, setDayModalOpen] = useState(false)
   const [dayModalDate, setDayModalDate] = useState<Date | null>(null)
 
-  // ✅ LER URL PARAMS E ABRIR MODAL AUTOMATICAMENTE
+
   useEffect(() => {
     const dateParam = searchParams.get('date')
     const viewParam = searchParams.get('view')
@@ -80,7 +80,7 @@ export default function Appointments() {
           setActiveTab(viewParam)
         }
 
-        // Limpar params depois de processar
+      
         searchParams.delete('dayModal')
         setSearchParams(searchParams)
       } catch (error) {

@@ -22,7 +22,6 @@ export interface Client {
   preferences?: ClientPreferences | null
   createdAt: string
   updatedAt: string
-  // Campos calculados (quando vier da listagem)
   totalAppointments?: number
   lastAppointmentDate?: string | null
   totalSpent?: number
